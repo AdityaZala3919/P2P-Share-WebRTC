@@ -53,7 +53,7 @@ export function setupDataChannel(
 }
 
 export async function createOffer(conn: PeerConnection, onSignal: (msg: Omit<SignalMessage, 'from_peer'>) => void): Promise<void> {
-  const dc = conn.pc.createDataChannel('nexus', { ordered: true });
+  const dc = conn.pc.createDataChannel('ciphershare', { ordered: true });
   conn.dataChannel = dc;
   setupDataChannel(dc, conn.peerId, () => {});
 

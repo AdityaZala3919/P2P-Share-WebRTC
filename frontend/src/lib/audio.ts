@@ -1,4 +1,4 @@
-const AUDIO_KEY = 'nexus_audio_enabled';
+const AUDIO_KEY = 'ciphershare_audio_enabled';
 
 export function isAudioEnabled(): boolean {
   return localStorage.getItem(AUDIO_KEY) !== 'false';

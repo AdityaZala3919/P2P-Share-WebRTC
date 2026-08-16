@@ -20,12 +20,12 @@ export function detectDefaultDeviceName(): string {
 }
 
 export function getDeviceName(roomId: string): string {
-  const stored = localStorage.getItem(`nexus_device_name_${roomId}`);
+  const stored = localStorage.getItem(`ciphershare_device_name_${roomId}`);
   return stored || detectDefaultDeviceName();
 }
 
 export function setDeviceName(roomId: string, name: string): void {
-  localStorage.setItem(`nexus_device_name_${roomId}`, name);
+  localStorage.setItem(`ciphershare_device_name_${roomId}`, name);
 }
 
 export function generatePeerId(): string {
@@ -33,10 +33,10 @@ export function generatePeerId(): string {
 }
 
 export function getOrCreatePeerId(): string {
-  let id = sessionStorage.getItem('nexus_peer_id');
+  let id = sessionStorage.getItem('ciphershare_peer_id');
   if (!id) {
     id = crypto.randomUUID();
-    sessionStorage.setItem('nexus_peer_id', id);
+    sessionStorage.setItem('ciphershare_peer_id', id);
   }
   return id;
 }

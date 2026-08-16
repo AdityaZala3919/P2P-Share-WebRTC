@@ -98,10 +98,10 @@ export function RoomPage() {
         body: JSON.stringify({ passphrase: pass }),
       });
       if (res.ok) {
-        sessionStorage.setItem(`nexus_pass_${roomId}`, pass);
+        sessionStorage.setItem(`ciphershare_pass_${roomId}`, pass);
         setRoom(roomId, pass, peerId, deviceName);
         setUnlocked(true);
-        addSystemMessage(`Joined room ${roomId}`);
+        addSystemMessage(`Connected to room ${roomId}`);
         return true;
       }
     } catch {
@@ -119,19 +119,18 @@ export function RoomPage() {
 
     const checkAuth = async () => {
       // 1. Check session storage
-      const storedPass = sessionStorage.getItem(`nexus_pass_${roomId}`);
+      const storedPass = sessionStorage.getItem(`ciphershare_pass_${roomId}`);
       if (storedPass) {
         const ok = await authenticateRoom(storedPass);
         if (ok) return;
       }
 
-      // 2. Check URL hash fragment
+      // 2. Check URL hash fragment (#passphrase)
       if (window.location.hash) {
         const hashPass = decodeURIComponent(window.location.hash.substring(1));
         if (hashPass) {
           const ok = await authenticateRoom(hashPass);
           if (ok) {
-            // Remove hash from address bar for privacy
             history.replaceState(null, '', window.location.pathname + window.location.search);
             return;
           }
@@ -184,45 +183,45 @@ export function RoomPage() {
 
   if (!roomId) return null;
 
-  // Render password prompt if room not unlocked yet
+  // Render password unlock prompt if room not unlocked yet
   if (!unlocked) {
     return (
-      <div className="h-screen flex items-center justify-center p-4 bg-[#08090C]">
-        <div className="w-full max-w-sm">
+      <div className="h-full h-[100dvh] flex flex-col items-center justify-center p-4 sm:p-6 bg-[#08090C] overflow-y-auto">
+        <div className="w-full max-w-sm sm:max-w-md my-auto">
           <div className="text-center mb-6">
-            <div className="w-12 h-12 rounded-2xl bg-[#00FFFF]/10 border border-[#00FFFF]/30 flex items-center justify-center text-[#00FFFF] mx-auto mb-3 shadow-lg">
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-[#00FFFF]/10 border border-[#00FFFF]/30 flex items-center justify-center text-[#00FFFF] mx-auto mb-3 shadow-[0_0_15px_rgba(0,255,255,0.15)]">
+              <svg className="w-6 h-6 sm:w-7 sm:h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
               </svg>
             </div>
-            <h2 className="text-lg font-bold text-white tracking-tight">Unlock Room {roomId}</h2>
+            <h2 className="text-lg sm:text-xl font-bold text-white tracking-tight">Unlock Room {roomId}</h2>
             <p className="text-xs text-[#7E8B9B] mt-1 font-mono">Enter passphrase to connect to P2P mesh</p>
           </div>
 
-          <form onSubmit={handleManualUnlock} className="bg-[#131720] border border-[#1A202C] rounded-2xl p-6 shadow-xl space-y-4">
+          <form onSubmit={handleManualUnlock} className="bg-[#131720] border border-[#1A202C] rounded-2xl sm:rounded-3xl p-5 sm:p-7 shadow-2xl space-y-4">
             <div>
-              <label className="text-[11px] text-[#7E8B9B] font-mono block mb-1">PASSPHRASE</label>
+              <label className="text-[11px] text-[#7E8B9B] font-mono block mb-1.5 font-medium">ROOM PASSPHRASE</label>
               <input
                 type="password"
                 value={promptPass}
                 onChange={e => setPromptPass(e.target.value)}
                 placeholder="Enter room passphrase..."
-                className="w-full bg-[#0D0F14] border border-[#1A202C] focus:border-[#00FFFF] text-white text-sm rounded-xl px-4 py-2.5 outline-none transition-colors"
+                className="w-full bg-[#0D0F14] border border-[#1A202C] focus:border-[#00FFFF] text-white text-sm rounded-xl px-4 py-3 outline-none transition-colors"
                 autoFocus
               />
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-2.5 pt-1">
               <button
                 type="button"
                 onClick={() => navigate('/')}
-                className="flex-1 py-2.5 bg-[#0D0F14] border border-[#1A202C] hover:text-white text-[#7E8B9B] text-xs font-semibold rounded-xl transition-all"
+                className="flex-1 py-3 bg-[#0D0F14] hover:bg-[#181D28] border border-[#1A202C] hover:text-white text-[#7E8B9B] text-xs font-semibold rounded-xl transition-all cursor-pointer"
               >
                 Back
               </button>
               <button
                 type="submit"
-                disabled={joining}
-                className="flex-2 py-2.5 bg-[#00FFFF] hover:bg-[#33FFFF] text-black text-xs font-semibold rounded-xl disabled:opacity-50 transition-all cursor-pointer"
+                disabled={joining || !promptPass.trim()}
+                className="flex-2 py-3 bg-[#00FFFF] hover:bg-[#33FFFF] text-black text-xs font-bold rounded-xl disabled:opacity-50 transition-all cursor-pointer shadow-md active:scale-[0.99]"
               >
                 {joining ? 'Verifying...' : 'Unlock & Join'}
               </button>
@@ -234,7 +233,7 @@ export function RoomPage() {
   }
 
   return (
-    <div className="h-screen flex flex-col bg-[#08090C] overflow-hidden">
+    <div className="h-full h-[100dvh] flex flex-col bg-[#08090C] overflow-hidden">
       <Header
         onPairDevice={() => setPairOpen(true)}
         onToggleVault={() => setVaultOpen(o => !o)}

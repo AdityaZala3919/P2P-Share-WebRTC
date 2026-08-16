@@ -1,23 +1,24 @@
-# NEXUS_P2P — Run & Deployment Guide
+# CipherShare — Run & Deployment Guide
 
-NEXUS_P2P is an end-to-end encrypted, peer-to-peer file transfer and persistent vault application built with **FastAPI**, **React**, **TypeScript**, **Tailwind CSS**, and **WebRTC DataChannels**.
+CipherShare is an end-to-end encrypted, peer-to-peer file transfer and persistent vault application built with **FastAPI**, **React**, **TypeScript**, **Tailwind CSS**, and **WebRTC DataChannels**.
 
 ---
 
 ## 📋 Prerequisites
 
-- **Python**: 3.10 or newer (tested on 3.12)
+- **Python**: `>= 3.13` (managed via `uv`)
+- **Package Manager**: [uv](https://github.com/astral-sh/uv) (fast Python package manager)
 - **Node.js**: 18.x or newer
 - **Modern Browser**: Chrome, Edge, Firefox, Brave, Safari (supports WebRTC + Web Crypto API)
 
 ---
 
-## ⚡ Quick Start (Fastest Way)
+## ⚡ Quick Start with `uv` (Fastest Way)
 
-### 1. Install Backend Dependencies
+### 1. Sync Backend with `uv`
 ```bash
 cd "D:\AI & ML\Projects\P2P\backend"
-pip install -r requirements.txt
+uv sync
 ```
 
 ### 2. Build Frontend
@@ -26,11 +27,12 @@ cd "D:\AI & ML\Projects\P2P\frontend"
 npm run build
 ```
 
-### 3. Start the Server
+### 3. Start Backend Server
 ```bash
 cd "D:\AI & ML\Projects\P2P\backend"
-python -m uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+uv run python main.py
 ```
+*(Or `uv run uvicorn app.app:app --host 0.0.0.0 --port 8000 --reload`)*
 
 Open your browser at **[http://localhost:8000](http://localhost:8000)**.
 
@@ -42,9 +44,8 @@ Open your browser at **[http://localhost:8000](http://localhost:8000)**.
 FastAPI serves both the REST API, WebSocket signaling, and the built React SPA frontend.
 
 ```bash
-# Terminal 1
 cd "D:\AI & ML\Projects\P2P\backend"
-python -m uvicorn main:app --host 0.0.0.0 --port 8000
+uv run python main.py
 ```
 - **App URL**: `http://localhost:8000`
 
@@ -56,7 +57,7 @@ Run backend and frontend independently for live code editing.
 ```bash
 # Terminal 1: Backend
 cd "D:\AI & ML\Projects\P2P\backend"
-python -m uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+uv run python main.py --reload
 
 # Terminal 2: Frontend (Vite Dev Server)
 cd "D:\AI & ML\Projects\P2P\frontend"
@@ -75,7 +76,7 @@ To share files directly between your PC, phone, or tablet over your local Wi-Fi:
 2. **Start the backend with host `0.0.0.0`**:
    ```bash
    cd "D:\AI & ML\Projects\P2P\backend"
-   python -m uvicorn main:app --host 0.0.0.0 --port 8000
+   uv run python main.py --host 0.0.0.0 --port 8000
    ```
 3. **Open on your PC**:
    `http://localhost:8000` or `http://192.168.1.50:8000`
@@ -104,27 +105,44 @@ ngrok http 8000
 ```
 Use the provided `https://xxxx.ngrok-free.app` link.
 
-### Option 3: Deploy to VPS / Cloud Server
-- **Server**: Ubuntu / Debian / Docker
-- Run the FastAPI app using Uvicorn or Gunicorn behind Nginx / Caddy with an SSL certificate.
-
 ---
 
-## 📖 How to Use the Features
+## 📖 Architecture Overview
 
-| Feature | How to Use |
-|---|---|
-| **Create a Room** | Enter any passphrase on the landing page and click *Create Encrypted Room*. |
-| **Join a Room** | Enter the 8-character room code and passphrase, or scan the QR code. |
-| **1-Click Auto-Join** | Open the *Pair Device* modal, check **1-Click Auto Join**, and copy/share the link. |
-| **Send Messages** | Type in the bottom input bar and press Enter. |
-| **Clipboard Sharing** | Click the 📋 clipboard icon next to the input box to instantly broadcast your clipboard content. |
-| **Direct File Transfer** | Click the 📎 paperclip icon → *Document / File* or drag & drop. Transfer streams in 64KB chunks directly peer-to-peer. |
-| **Folder Sharing** | Click 📎 → *Folder (Auto-Zip)* to automatically package and stream folders as a ZIP archive. |
-| **Live Camera Snap** | Click 📎 → *Camera Snap* to capture a photo from your webcam and send it instantly. |
-| **Screen Snippet** | Click 📎 → *Screen Snippet* to capture a screenshot of your screen or window. |
-| **Encrypted Vault** | Click the *Vault* button in the top right. Add private encrypted notes or files (up to 10MB) stored permanently in SQLite encrypted with **AES-256-GCM**. |
-| **Rename Device** | Click your device badge in the top right to change your nickname (e.g. *MacBook Pro*, *Pixel 8*). |
+```
+backend/
+├── app/
+│   ├── app.py                     # FastAPI application factory, CORS, exception handlers, SPA fallback
+│   ├── startup.py                 # Lifespan: DB initialization on startup, engine cleanup on shutdown
+│   ├── core/
+│   │   ├── config.py              # Settings (pydantic-settings) with SQLite, STUN, CORS, limits
+│   │   ├── exceptions.py          # CustomException hierarchy (RoomNotFound, InvalidPassphrase, etc.)
+│   │   ├── schemas.py             # CamelCaseModel, BaseResponse[T], BaseErrorResponse
+│   │   └── utils/mixins.py        # TimestampMixin (created_at, updated_at)
+│   ├── db/
+│   │   └── database.py            # SQLAlchemy 2.0 Async engine, AsyncSessionLocal, init_db
+│   ├── models/
+│   │   ├── room.py                # RoomModel (id, passphrase_hash, created_at, updated_at)
+│   │   └── vault.py               # VaultItemModel (AES encrypted data, iv, salt, sizes)
+│   ├── schemas/
+│   │   ├── room.py                # Room request & response schemas
+│   │   ├── vault.py               # Vault item CRUD schemas
+│   │   └── signaling.py           # DeviceInfo, SignalMessage schemas
+│   ├── services/
+│   │   ├── room_service.py        # RoomService: bcrypt hashing, validation, STUN config
+│   │   ├── vault_service.py       # VaultService: encrypted note & file storage CRUD
+│   │   └── signaling_service.py   # SignalingService: in-memory peer presence & WebRTC signal relay
+│   └── api/
+│       └── v1/
+│           ├── deps.py            # Route dependencies
+│           ├── router.py          # API v1 router
+│           └── endpoints/
+│               ├── rooms.py       # Room endpoints (create, join, peers, config)
+│               ├── vault.py       # Vault CRUD endpoints
+│               └── signaling.py   # WebSocket signaling endpoint (/ws/{room_id})
+├── main.py                        # Typer CLI runner
+└── pyproject.toml                 # uv project configuration (Python >= 3.13)
+```
 
 ---
 
@@ -132,7 +150,7 @@ Use the provided `https://xxxx.ngrok-free.app` link.
 
 | Action | Command |
 |---|---|
-| Run backend test suite | `cd backend && python -u test_api.py` |
+| Run backend test suite | `cd backend && uv run python test_suite.py` |
+| Start backend server | `cd backend && uv run python main.py` |
 | Rebuild frontend bundle | `cd frontend && npm run build` |
 | Type check frontend | `cd frontend && npm run build` |
-| Reset database | Delete `backend/nexus.db` (it will auto-recreate on restart) |
