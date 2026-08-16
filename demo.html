@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NEXUS // Minimalist P2P Chat & Vault</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts: Inter & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            app: {
+              bg: '#08090C',         // Deep clean black
+              sidebar: '#0D0F14',    // Minimal sidebar
+              card: '#131720',       // Bubble / card dark
+              cardHover: '#181D28',
+              border: '#1A202C',     // Subtle minimal borders
+              cyan: '#00FFFF',       // Accent cyan
+              cyanHover: '#33FFFF',
+              cyanDim: 'rgba(0, 255, 255, 0.12)',
+              green: '#00FF88',      // Online green
+              text: '#FFFFFF',       // Primary text
+              muted: '#7E8B9B',      // Secondary text
+            }
+          },
+          fontFamily: {
+            sans: ['"Inter"', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body {
+      background-color: #08090C;
+    }
+    /* Sleek minimalist scrollbar */
+    ::-webkit-scrollbar {
+      width: 5px;
+      height: 5px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #1A202C;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #00FFFF;
+    }
+  </style>
+</head>
+
+<body class="text-app-text h-screen flex flex-col font-sans selection:bg-app-cyan selection:text-black overflow-hidden">
+
+  <!-- ================= TOP MINIMAL APP HEADER ================= -->
+  <header class="h-14 border-b border-app-border bg-app-sidebar/80 backdrop-blur-md px-4 sm:px-6 flex items-center justify-between z-30 shrink-0">
+    
+    <!-- Left: Room & Online Status -->
+    <div class="flex items-center space-x-3">
+      <div class="w-8 h-8 rounded-lg bg-app-cyanDim border border-app-cyan/30 flex items-center justify-center text-app-cyan">
+        <i data-lucide="shield" class="w-4 h-4"></i>
+      </div>
+      <div>
+        <div class="flex items-center space-x-2">
+          <span class="font-semibold text-sm tracking-wide text-white">Encrypted Room</span>
+          <span class="text-xs font-mono px-2 py-0.5 rounded bg-app-card border border-app-border text-app-cyan">CYBER-7429</span>
+        </div>
+        <p class="text-[11px] text-app-muted flex items-center gap-1.5 font-mono">
+          <span class="w-2 h-2 rounded-full bg-app-green inline-block"></span>
+          3 Devices Connected (P2P Mesh)
+        </p>
+      </div>
+    </div>
+
+    <!-- Right: Minimal Actions (Pair QR, Toggle Vault, Nickname) -->
+    <div class="flex items-center space-x-2 sm:space-x-3">
+      
+      <!-- Vault Toggle Button -->
+      <button onclick="toggleVaultSidebar()" id="vault-btn" class="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border border-app-border hover:border-app-cyan text-app-muted hover:text-white transition-all bg-app-card">
+        <i data-lucide="lock" class="w-3.5 h-3.5 text-app-cyan"></i>
+        <span>Vault</span>
+        <span class="w-1.5 h-1.5 rounded-full bg-app-cyan"></span>
+      </button>
+
+      <!-- Pair Device QR Button -->
+      <button onclick="toggleQRModal(true)" class="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-app-cyan text-black hover:bg-app-cyanHover transition-all shadow-sm">
+        <i data-lucide="qr-code" class="w-3.5 h-3.5"></i>
+        <span>Pair Device</span>
+      </button>
+
+      <!-- User Device Pill -->
+      <div class="hidden sm:flex items-center space-x-1.5 bg-app-card border border-app-border px-2.5 py-1.5 rounded-lg text-xs text-app-muted">
+        <i data-lucide="laptop" class="w-3.5 h-3.5 text-app-cyan"></i>
+        <span class="text-white font-medium" id="my-device-name">Work PC (You)</span>
+        <button onclick="editDeviceName()" class="hover:text-app-cyan ml-1">
+          <i data-lucide="edit-2" class="w-3 h-3"></i>
+        </button>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- ================= MAIN CONTENT WRAPPER ================= -->
+  <div class="flex-1 flex overflow-hidden relative">
+
+    <!-- ================= CHAT VIEW (PRIMARY AREA) ================= -->
+    <main class="flex-1 flex flex-col bg-app-bg relative">
+      
+      <!-- Connected Devices Sub-header Pill Strip -->
+      <div class="px-6 py-2 border-b border-app-border/60 bg-app-sidebar/40 flex items-center justify-between text-xs shrink-0">
+        <div class="flex items-center space-x-2 overflow-x-auto">
+          <span class="text-[11px] text-app-muted font-mono uppercase tracking-wider">Peers:</span>
+          
+          <span class="flex items-center space-x-1.5 px-2 py-0.5 rounded-full bg-app-card border border-app-cyan/30 text-white text-[11px]">
+            <span class="w-1.5 h-1.5 rounded-full bg-app-cyan"></span>
+            <span>Work PC (Local)</span>
+          </span>
+
+          <span class="flex items-center space-x-1.5 px-2 py-0.5 rounded-full bg-app-card border border-app-border text-slate-300 text-[11px]">
+            <span class="w-1.5 h-1.5 rounded-full bg-app-green"></span>
+            <span>Personal Phone</span>
+          </span>
+
+          <span class="flex items-center space-x-1.5 px-2 py-0.5 rounded-full bg-app-card border border-app-border text-slate-300 text-[11px]">
+            <span class="w-1.5 h-1.5 rounded-full bg-app-green"></span>
+            <span>Home MacBook</span>
+          </span>
+        </div>
+
+        <span class="text-[11px] text-app-muted font-mono hidden md:inline">End-to-End Encrypted WebRTC</span>
+      </div>
+
+      <!-- ================= CHAT MESSAGE STREAM ================= -->
+      <div id="chat-messages" class="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
+
+        <!-- Date separator -->
+        <div class="flex items-center justify-center my-2">
+          <span class="px-3 py-0.5 rounded-full bg-app-sidebar border border-app-border text-[11px] font-mono text-app-muted">
+            Today
+          </span>
+        </div>
+
+        <!-- 1. Text Message (Received from Phone) -->
+        <div class="flex items-start space-x-2.5 max-w-xl">
+          <div class="w-7 h-7 rounded-full bg-app-card border border-app-border flex items-center justify-center text-app-green text-xs font-mono shrink-0">
+            <i data-lucide="smartphone" class="w-3.5 h-3.5"></i>
+          </div>
+          <div class="flex flex-col items-start">
+            <span class="text-[11px] font-medium text-app-muted mb-1 ml-1">Personal Phone</span>
+            <div class="bg-app-card border border-app-border rounded-2xl rounded-tl-sm px-4 py-2.5 text-sm text-slate-100 shadow-sm leading-relaxed">
+              Hey! Just connected from my phone. Let me send over that video recording.
+              <span class="block text-[10px] text-app-muted font-mono text-right mt-1">19:42</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. Active Streaming File Transfer Bubble (ToffeeShare Style inside Chat) -->
+        <div class="flex items-start space-x-2.5 max-w-xl">
+          <div class="w-7 h-7 rounded-full bg-app-card border border-app-border flex items-center justify-center text-app-green text-xs font-mono shrink-0">
+            <i data-lucide="smartphone" class="w-3.5 h-3.5"></i>
+          </div>
+          <div class="flex flex-col items-start w-full sm:w-[380px]">
+            <span class="text-[11px] font-medium text-app-muted mb-1 ml-1">Personal Phone</span>
+            
+            <div class="bg-app-card border border-app-cyan/40 rounded-2xl rounded-tl-sm p-3.5 w-full shadow-lg">
+              <div class="flex items-center space-x-3 mb-2.5">
+                <div class="w-10 h-10 rounded-xl bg-app-cyanDim border border-app-cyan/40 flex items-center justify-center text-app-cyan shrink-0">
+                  <i data-lucide="video" class="w-5 h-5"></i>
+                </div>
+                <div class="min-w-0 flex-1">
+                  <h4 class="text-xs font-semibold text-white truncate">Demo_Walkthrough_4K.mp4</h4>
+                  <p class="text-[11px] text-app-muted font-mono">1.4 GB / 2.1 GB · <span class="text-app-cyan font-bold">48.5 MB/s</span></p>
+                </div>
+              </div>
+
+              <!-- Stream Progress Bar -->
+              <div class="w-full bg-app-sidebar h-1.5 rounded-full overflow-hidden mb-2">
+                <div class="bg-app-cyan h-full rounded-full transition-all duration-300" style="width: 68%;"></div>
+              </div>
+
+              <div class="flex items-center justify-between text-[11px] font-mono text-app-muted">
+                <span class="text-app-green">Streaming P2P (68%)</span>
+                <span>ETA: 14s</span>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- 3. Sent Message from Self (Work PC) -->
+        <div class="flex items-start justify-end space-x-2.5 ml-auto max-w-xl">
+          <div class="flex flex-col items-end">
+            <span class="text-[11px] font-medium text-app-cyan mb-1 mr-1">Work PC (You)</span>
+            <div class="bg-app-cyanDim border border-app-cyan/40 rounded-2xl rounded-tr-sm px-4 py-2.5 text-sm text-white shadow-sm leading-relaxed">
+              Receiving it at 48 MB/s! I'm also dropping the project folder here.
+              <span class="block text-[10px] text-app-muted font-mono text-right mt-1">19:44</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 4. Sent Folder Bubble (Auto-zipped P2P Stream) -->
+        <div class="flex items-start justify-end space-x-2.5 ml-auto max-w-xl">
+          <div class="flex flex-col items-end w-full sm:w-[380px]">
+            <span class="text-[11px] font-medium text-app-cyan mb-1 mr-1">Work PC (You)</span>
+            
+            <div class="bg-app-card border border-app-border rounded-2xl rounded-tr-sm p-3.5 w-full shadow-sm">
+              <div class="flex items-center space-x-3 mb-2">
+                <div class="w-10 h-10 rounded-xl bg-app-sidebar border border-app-border flex items-center justify-center text-app-cyan shrink-0">
+                  <i data-lucide="folder-archive" class="w-5 h-5"></i>
+                </div>
+                <div class="min-w-0 flex-1">
+                  <h4 class="text-xs font-semibold text-white truncate">Source_Code_Assets.zip</h4>
+                  <p class="text-[11px] text-app-muted font-mono">Folder (42 files) · 38.4 MB</p>
+                </div>
+                <button class="px-2.5 py-1 bg-app-sidebar hover:bg-app-cyan hover:text-black border border-app-border text-xs font-mono text-white rounded transition-all flex items-center gap-1">
+                  <i data-lucide="download" class="w-3.5 h-3.5"></i>
+                </button>
+              </div>
+              <span class="text-[10px] text-app-green font-mono">✓ Sent to 2 peers</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 5. 1-Click Clipboard Bubble -->
+        <div class="flex items-start space-x-2.5 max-w-xl">
+          <div class="w-7 h-7 rounded-full bg-app-card border border-app-border flex items-center justify-center text-app-green text-xs font-mono shrink-0">
+            <i data-lucide="monitor" class="w-3.5 h-3.5"></i>
+          </div>
+          <div class="flex flex-col items-start w-full sm:w-[380px]">
+            <span class="text-[11px] font-medium text-app-muted mb-1 ml-1">Home MacBook</span>
+            <div class="bg-app-card border border-app-border rounded-2xl rounded-tl-sm p-3.5 w-full">
+              <div class="flex items-center justify-between pb-1.5 mb-1.5 border-b border-app-border text-[11px] text-app-cyan font-mono">
+                <span class="flex items-center gap-1"><i data-lucide="clipboard" class="w-3 h-3"></i> CLIPBOARD</span>
+                <button onclick="copyToClipboard('https://github.com/example/p2p-hub')" class="hover:underline flex items-center gap-1 text-[11px]">
+                  <i data-lucide="copy" class="w-3 h-3"></i> Copy
+                </button>
+              </div>
+              <p class="text-xs font-mono text-slate-200 break-all">https://github.com/example/p2p-hub</p>
+              <span class="block text-[10px] text-app-muted font-mono text-right mt-1">19:46</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ================= MINIMAL BOTTOM INPUT BAR ================= -->
+      <div class="p-3 sm:p-4 border-t border-app-border bg-app-sidebar/90 shrink-0">
+        
+        <!-- Attachment Menu Popover (Hidden by default) -->
+        <div id="attach-menu" class="hidden absolute bottom-16 left-4 sm:left-6 bg-app-card border border-app-border rounded-xl p-2 shadow-2xl space-y-1 z-20 text-xs font-medium w-48">
+          <button onclick="triggerFileInput('document')" class="w-full flex items-center space-x-2.5 px-3 py-2 rounded-lg hover:bg-app-sidebar text-slate-200 hover:text-white transition-colors">
+            <i data-lucide="file-text" class="w-4 h-4 text-app-cyan"></i>
+            <span>Document / File</span>
+          </button>
+          <button onclick="triggerFileInput('folder')" class="w-full flex items-center space-x-2.5 px-3 py-2 rounded-lg hover:bg-app-sidebar text-slate-200 hover:text-white transition-colors">
+            <i data-lucide="folder" class="w-4 h-4 text-app-cyan"></i>
+            <span>Folder (Stream Zip)</span>
+          </button>
+          <button onclick="triggerFileInput('media')" class="w-full flex items-center space-x-2.5 px-3 py-2 rounded-lg hover:bg-app-sidebar text-slate-200 hover:text-white transition-colors">
+            <i data-lucide="image" class="w-4 h-4 text-app-cyan"></i>
+            <span>Photos & Videos</span>
+          </button>
+          <button onclick="snapPhoto()" class="w-full flex items-center space-x-2.5 px-3 py-2 rounded-lg hover:bg-app-sidebar text-slate-200 hover:text-white transition-colors">
+            <i data-lucide="camera" class="w-4 h-4 text-app-cyan"></i>
+            <span>Camera Snap</span>
+          </button>
+          <button onclick="captureScreen()" class="w-full flex items-center space-x-2.5 px-3 py-2 rounded-lg hover:bg-app-sidebar text-slate-200 hover:text-white transition-colors">
+            <i data-lucide="monitor-up" class="w-4 h-4 text-app-cyan"></i>
+            <span>Screen Snippet</span>
+          </button>
+        </div>
+
+        <form onsubmit="handleSend(event)" class="flex items-center space-x-2 max-w-5xl mx-auto">
+          
+          <!-- Attach Paperclip Button -->
+          <button type="button" onclick="toggleAttachMenu()" class="p-2.5 rounded-xl bg-app-card hover:bg-app-cardHover border border-app-border text-app-muted hover:text-app-cyan transition-colors">
+            <i data-lucide="paperclip" class="w-4 h-4"></i>
+          </button>
+
+          <!-- 1-Click Clipboard Paste Button -->
+          <button type="button" onclick="pasteClipboard()" class="p-2.5 rounded-xl bg-app-card hover:bg-app-cardHover border border-app-border text-app-muted hover:text-app-cyan transition-colors" title="Send Clipboard">
+            <i data-lucide="clipboard-paste" class="w-4 h-4"></i>
+          </button>
+
+          <!-- Main Input Field -->
+          <input 
+            type="text" 
+            id="chat-input"
+            placeholder="Type a message or paste a link..." 
+            class="flex-1 bg-app-card border border-app-border focus:border-app-cyan text-white text-sm rounded-xl px-4 py-2.5 outline-none transition-colors"
+          />
+
+          <!-- Send Button -->
+          <button type="submit" class="p-2.5 rounded-xl bg-app-cyan hover:bg-app-cyanHover text-black font-semibold transition-all shadow-sm">
+            <i data-lucide="send" class="w-4 h-4"></i>
+          </button>
+        </form>
+      </div>
+
+    </main>
+
+    <!-- ================= RIGHT SIDEBAR: PERSISTENT ENCRYPTED VAULT ================= -->
+    <aside id="vault-sidebar" class="w-80 sm:w-96 border-l border-app-border bg-app-sidebar flex flex-col transition-all duration-300 translate-x-full absolute right-0 top-0 bottom-0 z-30 shadow-2xl">
+      
+      <!-- Vault Header -->
+      <div class="p-4 border-b border-app-border flex items-center justify-between">
+        <div class="flex items-center space-x-2">
+          <i data-lucide="shield-check" class="w-4 h-4 text-app-cyan"></i>
+          <h3 class="text-xs font-mono font-bold uppercase tracking-wider text-white">Encrypted Vault (SQLite)</h3>
+        </div>
+        <button onclick="toggleVaultSidebar(false)" class="text-app-muted hover:text-white">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <!-- Vault Sub-info -->
+      <div class="p-3 bg-app-card/60 border-b border-app-border text-[11px] text-app-muted font-mono">
+        🔒 Client-side AES-256-GCM encrypted notes & files (&lt;10MB). Accessible anytime even when peers are offline.
+      </div>
+
+      <!-- Vault Items List -->
+      <div class="flex-1 overflow-y-auto p-4 space-y-3">
+        
+        <!-- Add Item Buttons -->
+        <div class="grid grid-cols-2 gap-2 mb-3">
+          <button onclick="addVaultNote()" class="py-2 px-3 bg-app-cyan text-black font-semibold text-xs rounded-lg hover:bg-app-cyanHover transition-all flex items-center justify-center gap-1">
+            <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+            <span>Add Note</span>
+          </button>
+          <button onclick="addVaultFile()" class="py-2 px-3 bg-app-card border border-app-border text-slate-200 hover:text-white text-xs rounded-lg hover:border-app-cyan transition-all flex items-center justify-center gap-1">
+            <i data-lucide="paperclip" class="w-3.5 h-3.5 text-app-cyan"></i>
+            <span>Add File</span>
+          </button>
+        </div>
+
+        <!-- Item 1: API Keys -->
+        <div class="p-3 rounded-xl bg-app-card border border-app-border hover:border-app-cyan/50 transition-colors">
+          <div class="flex items-center justify-between mb-1">
+            <span class="text-xs font-semibold text-white">API Keys & Tokens</span>
+            <button onclick="copyToClipboard('AWS_KEY=AKIA_SAMPLE_KEY')" class="text-app-muted hover:text-app-cyan">
+              <i data-lucide="copy" class="w-3 h-3"></i>
+            </button>
+          </div>
+          <p class="text-[11px] font-mono text-app-muted truncate">AWS_KEY=AKIA_SAMPLE_KEY...</p>
+          <span class="text-[9px] font-mono text-app-cyan mt-1 block">AES-256-GCM · Stored in DB</span>
+        </div>
+
+        <!-- Item 2: Stored Credential File -->
+        <div class="p-3 rounded-xl bg-app-card border border-app-border hover:border-app-cyan/50 transition-colors">
+          <div class="flex items-center justify-between mb-1">
+            <span class="text-xs font-semibold text-white flex items-center gap-1">
+              <i data-lucide="key" class="w-3 h-3 text-app-green"></i> server_key.pem
+            </span>
+            <button onclick="showToast('File decrypted & downloaded')" class="text-app-muted hover:text-app-cyan">
+              <i data-lucide="download" class="w-3 h-3"></i>
+            </button>
+          </div>
+          <p class="text-[11px] font-mono text-app-muted">4.2 KB · Persistent Attachment</p>
+        </div>
+
+      </div>
+
+    </aside>
+
+  </div>
+
+  <!-- ================= PAIR DEVICE / QR CODE MODAL ================= -->
+  <div id="qr-modal" class="fixed inset-0 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden">
+    <div class="bg-app-sidebar border border-app-border rounded-2xl max-w-sm w-full p-6 shadow-2xl relative">
+      
+      <!-- Close -->
+      <button onclick="toggleQRModal(false)" class="absolute top-4 right-4 text-app-muted hover:text-white">
+        <i data-lucide="x" class="w-4 h-4"></i>
+      </button>
+
+      <div class="text-center mb-5">
+        <h3 class="text-sm font-semibold text-white">Pair Another Device</h3>
+        <p class="text-xs text-app-muted mt-0.5">Scan from mobile or share room code</p>
+      </div>
+
+      <!-- Minimal QR Graphic -->
+      <div class="bg-white p-3 rounded-xl mx-auto w-44 h-44 flex items-center justify-center mb-5 shadow-inner">
+        <svg viewBox="0 0 100 100" class="w-full h-full text-black">
+          <rect width="100" height="100" fill="white" />
+          <rect x="10" y="10" width="25" height="25" fill="black" />
+          <rect x="15" y="15" width="15" height="15" fill="white" />
+          <rect x="18" y="18" width="9" height="9" fill="black" />
+          <rect x="65" y="10" width="25" height="25" fill="black" />
+          <rect x="70" y="15" width="15" height="15" fill="white" />
+          <rect x="73" y="18" width="9" height="9" fill="black" />
+          <rect x="10" y="65" width="25" height="25" fill="black" />
+          <rect x="15" y="70" width="15" height="15" fill="white" />
+          <rect x="18" y="73" width="9" height="9" fill="black" />
+          <rect x="42" y="15" width="16" height="8" fill="black" />
+          <rect x="42" y="30" width="8" height="16" fill="black" />
+          <rect x="55" y="35" width="12" height="12" fill="black" />
+          <rect x="42" y="65" width="20" height="8" fill="black" />
+          <rect x="70" y="65" width="15" height="15" fill="black" />
+        </svg>
+      </div>
+
+      <!-- Code Box -->
+      <div class="bg-app-card border border-app-border rounded-xl p-2.5 flex items-center justify-between mb-3">
+        <div>
+          <span class="text-[10px] text-app-muted block font-mono">ROOM PASSCODE</span>
+          <span class="text-sm font-mono font-bold text-app-cyan tracking-wider">CYBER-7429</span>
+        </div>
+        <button onclick="copyToClipboard('CYBER-7429')" class="px-2.5 py-1 bg-app-sidebar hover:border-app-cyan border border-app-border rounded text-xs text-white">
+          Copy
+        </button>
+      </div>
+
+      <button onclick="copyToClipboard(window.location.origin + '/#room=CYBER-7429')" class="w-full py-2 bg-app-cyan hover:bg-app-cyanHover text-black font-semibold text-xs rounded-xl transition-all">
+        Copy Direct Room Link
+      </button>
+
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 translate-y-20 opacity-0 transition-all duration-300 pointer-events-none">
+    <div class="bg-app-card border border-app-cyan/50 px-4 py-2.5 rounded-full text-xs font-mono text-white flex items-center space-x-2 shadow-xl">
+      <span class="w-1.5 h-1.5 rounded-full bg-app-cyan"></span>
+      <span id="toast-msg">Notification</span>
+    </div>
+  </div>
+
+  <!-- JAVASCRIPT INTERACTIONS -->
+  <script>
+    lucide.createIcons();
+
+    let vaultOpen = false;
+
+    function toggleVaultSidebar(force) {
+      const sidebar = document.getElementById('vault-sidebar');
+      vaultOpen = typeof force === 'boolean' ? force : !vaultOpen;
+      if (vaultOpen) {
+        sidebar.classList.remove('translate-x-full');
+      } else {
+        sidebar.classList.add('translate-x-full');
+      }
+    }
+
+    function toggleAttachMenu() {
+      const menu = document.getElementById('attach-menu');
+      menu.classList.toggle('hidden');
+    }
+
+    function toggleQRModal(show) {
+      const modal = document.getElementById('qr-modal');
+      if (show) modal.classList.remove('hidden');
+      else modal.classList.add('hidden');
+      lucide.createIcons();
+    }
+
+    function showToast(text) {
+      const toast = document.getElementById('toast');
+      document.getElementById('toast-msg').innerText = text;
+      toast.classList.remove('translate-y-20', 'opacity-0');
+      setTimeout(() => {
+        toast.classList.add('translate-y-20', 'opacity-0');
+      }, 2200);
+    }
+
+    function copyToClipboard(text) {
+      navigator.clipboard.writeText(text).catch(() => {});
+      showToast(`Copied: ${text}`);
+    }
+
+    function pasteClipboard() {
+      showToast('📋 Clipboard content broadcasted to room');
+    }
+
+    function triggerFileInput(type) {
+      document.getElementById('attach-menu').classList.add('hidden');
+      showToast(`Selected ${type} transfer. Streaming via WebRTC DataChannel...`);
+    }
+
+    function snapPhoto() {
+      document.getElementById('attach-menu').classList.add('hidden');
+      showToast('📷 Camera snapped & sent to room');
+    }
+
+    function captureScreen() {
+      document.getElementById('attach-menu').classList.add('hidden');
+      showToast('🖥️ Screen snippet captured & sent');
+    }
+
+    function editDeviceName() {
+      const current = document.getElementById('my-device-name').innerText.replace(' (You)', '');
+      const newName = prompt('Enter your device name:', current);
+      if (newName) {
+        document.getElementById('my-device-name').innerText = `${newName} (You)`;
+        showToast(`Device renamed to ${newName}`);
+      }
+    }
+
+    function addVaultNote() {
+      const title = prompt('Enter note title:');
+      if (title) {
+        showToast(`Encrypted note "${title}" saved to SQLite Vault`);
+      }
+    }
+
+    function addVaultFile() {
+      showToast('File encrypted (AES-256) & stored in SQLite Vault');
+    }
+
+    function handleSend(e) {
+      e.preventDefault();
+      const input = document.getElementById('chat-input');
+      const val = input.value.trim();
+      if (!val) return;
+
+      const container = document.getElementById('chat-messages');
+      const msgDiv = document.createElement('div');
+      msgDiv.className = 'flex items-start justify-end space-x-2.5 ml-auto max-w-xl animate-fade-in';
+      msgDiv.innerHTML = `
+        <div class="flex flex-col items-end">
+          <span class="text-[11px] font-medium text-app-cyan mb-1 mr-1">Work PC (You)</span>
+          <div class="bg-app-cyanDim border border-app-cyan/40 rounded-2xl rounded-tr-sm px-4 py-2.5 text-sm text-white shadow-sm leading-relaxed">
+            ${val.replace(/</g, "&lt;").replace(/>/g, "&gt;")}
+            <span class="block text-[10px] text-app-muted font-mono text-right mt-1">Just now</span>
+          </div>
+        </div>
+      `;
+      container.appendChild(msgDiv);
+      input.value = '';
+      container.scrollTop = container.scrollHeight;
+    }
+  </script>
+</body>
+</html>
