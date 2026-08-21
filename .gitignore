@@ -1,2 +1,24 @@
-*.venv
-*__pycache__*
+# Python virtual environments & bytecode
+.venv/
+*.venv/
+__pycache__/
+*.pyc
+*.pyo
+
+# SQLite databases
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+
+# Node modules & build artifacts
+node_modules/
+dist/
+.vite/
+.oxlintrc.json
+
+# OS files
+.DS_Store
+Thumbs.db
+*.log

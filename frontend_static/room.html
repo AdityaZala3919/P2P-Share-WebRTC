@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en" class="dark h-full">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>CIPHERSHARE // Encrypted Room</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts: Inter & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- QRCode CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.4/build/qrcode.min.js"></script>
+  <!-- fflate CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/fflate@0.8.2/umd/index.js"></script>
+  <link rel="stylesheet" href="/css/app.css">
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            app: {
+              bg: '#08090C',
+              sidebar: '#0D0F14',
+              card: '#131720',
+              cardHover: '#181D28',
+              border: '#1A202C',
+              cyan: '#00FFFF',
+              cyanHover: '#33FFFF',
+              cyanDim: 'rgba(0, 255, 255, 0.12)',
+              green: '#00FF88',
+              text: '#FFFFFF',
+              muted: '#7E8B9B',
+            }
+          },
+          fontFamily: {
+            sans: ['"Inter"', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+          }
+        }
+      }
+    }
+  </script>
+</head>
+
+<body class="text-app-text h-full h-[100dvh] flex flex-col font-sans selection:bg-app-cyan selection:text-black overflow-hidden bg-[#08090C] fixed inset-0">
+
+  <!-- ================= TOP APP HEADER ================= -->
+  
+  <!-- 1. DESKTOP / PC HEADER -->
+  <header class="hidden md:flex h-14 border-b border-app-border bg-app-sidebar/80 backdrop-blur-md px-6 items-center justify-between z-30 shrink-0">
+    
+    <div class="flex items-center space-x-3">
+      <div class="w-8 h-8 rounded-lg bg-app-cyanDim border border-app-cyan/30 flex items-center justify-center text-app-cyan shrink-0">
+        <i data-lucide="shield" class="w-4 h-4"></i>
+      </div>
+      <div>
+        <div class="flex items-center space-x-2">
+          <span class="font-semibold text-sm tracking-wide text-white">Encrypted Room</span>
+          <button id="btn-copy-header-room" class="text-xs font-mono px-2 py-0.5 rounded bg-app-card border border-app-border hover:border-app-cyan text-app-cyan transition-all cursor-pointer flex items-center gap-1" title="Copy room code">
+            <span id="header-room-id">CYBER-7429</span>
+          </button>
+        </div>
+        <p class="text-[11px] text-app-muted flex items-center gap-1.5 font-mono">
+          <span id="mesh-status-dot" class="w-2 h-2 rounded-full bg-app-green inline-block"></span>
+          <span id="mesh-status-text">1 Device Connected (Local)</span>
+        </p>
+      </div>
+    </div>
+
+    <div class="flex items-center space-x-3">
+      <button id="btn-toggle-vault" class="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border border-app-border hover:border-app-cyan text-app-muted hover:text-white transition-all bg-app-card cursor-pointer">
+        <i data-lucide="lock" class="w-3.5 h-3.5 text-app-cyan"></i>
+        <span>Vault</span>
+        <span id="vault-badge-dot" class="w-1.5 h-1.5 rounded-full bg-app-cyan"></span>
+      </button>
+
+      <button id="btn-open-pair" class="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-app-cyan text-black hover:bg-app-cyanHover transition-all shadow-sm cursor-pointer">
+        <i data-lucide="qr-code" class="w-3.5 h-3.5"></i>
+        <span>Pair Device</span>
+      </button>
+
+      <div class="flex items-center space-x-1.5 bg-app-card border border-app-border px-2.5 py-1.5 rounded-lg text-xs text-app-muted">
+        <i data-lucide="laptop" class="w-3.5 h-3.5 text-app-cyan"></i>
+        <span class="text-white font-medium" id="my-device-name-display">Device (You)</span>
+        <button id="btn-edit-device-name" class="hover:text-app-cyan ml-1 cursor-pointer">
+          <i data-lucide="edit-2" class="w-3 h-3"></i>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- 2. MOBILE PHONE APP BAR -->
+  <header class="flex md:hidden h-14 border-b border-app-border bg-app-sidebar/95 backdrop-blur-md px-3 items-center justify-between z-30 shrink-0 select-none">
+    
+    <div id="btn-mobile-open-info" class="flex items-center space-x-2.5 min-w-0 flex-1 cursor-pointer active:opacity-80">
+      <div class="relative shrink-0">
+        <div class="w-9 h-9 rounded-full bg-app-card border border-app-cyan/40 flex items-center justify-center text-app-cyan shadow-sm">
+          <i data-lucide="shield" class="w-4 h-4"></i>
+        </div>
+        <span id="mesh-status-dot-mobile" class="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-app-green ring-2 ring-app-sidebar"></span>
+      </div>
+      
+      <div class="min-w-0 flex-1">
+        <div class="flex items-center space-x-1.5">
+          <h1 class="font-semibold text-sm text-white truncate">Encrypted Room</h1>
+          <span id="header-room-id-mobile" class="text-[10px] font-mono font-medium px-1.5 py-0.2 rounded bg-app-card border border-app-cyan/30 text-app-cyan shrink-0">CYBER-7429</span>
+        </div>
+        <p class="text-[11px] text-app-muted font-mono flex items-center gap-1 truncate">
+          <span id="mesh-status-text-mobile">1 device online</span>
+          <span class="text-app-muted/60">•</span>
+          <span class="text-app-cyan font-sans text-[10px]">tap for info</span>
+        </p>
+      </div>
+    </div>
+
+    <div class="flex items-center space-x-1 shrink-0">
+      <button id="btn-toggle-vault-mobile" class="w-9 h-9 rounded-full hover:bg-app-card flex items-center justify-center text-app-muted hover:text-white transition-colors relative cursor-pointer" title="Encrypted Vault">
+        <i data-lucide="lock" class="w-4 h-4 text-app-cyan"></i>
+        <span id="vault-badge-dot-mobile" class="hidden absolute top-2 right-2 w-2 h-2 rounded-full bg-app-cyan ring-1 ring-app-sidebar"></span>
+      </button>
+
+      <button id="btn-open-pair-mobile" class="w-9 h-9 rounded-full hover:bg-app-card flex items-center justify-center text-app-cyan transition-colors cursor-pointer" title="Pair Device">
+        <i data-lucide="qr-code" class="w-4 h-4"></i>
+      </button>
+
+      <div class="relative">
+        <button id="mobile-menu-btn" class="w-9 h-9 rounded-full hover:bg-app-card flex items-center justify-center text-app-muted hover:text-white transition-colors cursor-pointer">
+          <i data-lucide="more-vertical" class="w-4 h-4"></i>
+        </button>
+
+        <div id="mobile-menu-dropdown" class="hidden absolute right-0 top-11 w-52 bg-app-card border border-app-border rounded-xl shadow-2xl py-1.5 z-50 text-xs">
+          <button id="btn-mobile-menu-info" class="w-full px-3.5 py-2.5 flex items-center space-x-2.5 hover:bg-app-sidebar text-slate-200 text-left cursor-pointer">
+            <i data-lucide="info" class="w-4 h-4 text-app-cyan"></i>
+            <span>Room & Peer Info</span>
+          </button>
+          <button id="btn-mobile-menu-pair" class="w-full px-3.5 py-2.5 flex items-center space-x-2.5 hover:bg-app-sidebar text-slate-200 text-left cursor-pointer">
+            <i data-lucide="qr-code" class="w-4 h-4 text-app-cyan"></i>
+            <span>Pair New Device</span>
+          </button>
+          <button id="btn-mobile-menu-vault" class="w-full px-3.5 py-2.5 flex items-center space-x-2.5 hover:bg-app-sidebar text-slate-200 text-left cursor-pointer">
+            <i data-lucide="shield-check" class="w-4 h-4 text-app-cyan"></i>
+            <span>Encrypted Vault (DB)</span>
+          </button>
+          <button id="btn-mobile-menu-rename" class="w-full px-3.5 py-2.5 flex items-center space-x-2.5 hover:bg-app-sidebar text-slate-200 text-left cursor-pointer">
+            <i data-lucide="smartphone" class="w-4 h-4 text-app-cyan"></i>
+            <span>Rename My Device</span>
+          </button>
+          <div class="h-px bg-app-border my-1"></div>
+          <button id="btn-mobile-menu-copy-link" class="w-full px-3.5 py-2.5 flex items-center space-x-2.5 hover:bg-app-sidebar text-app-cyan text-left cursor-pointer">
+            <i data-lucide="link-2" class="w-4 h-4"></i>
+            <span>Copy Room Link</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ================= MAIN CONTENT WRAPPER ================= -->
+  <div class="flex-1 min-h-0 flex overflow-hidden relative">
+
+    <main class="flex-1 min-h-0 flex flex-col bg-app-bg relative overflow-hidden">
+      
+      <!-- 1. DESKTOP Connected Devices Sub-header -->
+      <div class="hidden md:flex px-6 py-2 border-b border-app-border/60 bg-app-sidebar/40 items-center justify-between text-xs shrink-0">
+        <div class="flex items-center space-x-2 overflow-x-auto no-scrollbar" id="peers-strip-container">
+          <span class="text-[11px] text-app-muted font-mono uppercase tracking-wider">Peers:</span>
+          <span class="flex items-center space-x-1.5 px-2 py-0.5 rounded-full bg-app-card border border-app-cyan/30 text-white text-[11px] shrink-0" id="local-peer-pill">
+            <span class="w-1.5 h-1.5 rounded-full bg-app-cyan"></span>
+            <span id="local-peer-pill-text">Local Device (Local)</span>
+          </span>
+        </div>
+
+        <span class="text-[11px] text-app-muted font-mono">End-to-End Encrypted WebRTC</span>
+      </div>
+
+      <!-- 2. MOBILE Connected Devices Strip -->
+      <div class="flex md:hidden items-center space-x-2 px-3 py-1.5 border-b border-app-border/40 bg-app-sidebar/50 overflow-x-auto no-scrollbar shrink-0 text-xs select-none" id="peers-strip-container-mobile">
+        <span class="text-[10px] text-app-muted font-mono uppercase shrink-0">Peers:</span>
+        <span class="flex items-center space-x-1.5 px-2 py-0.5 rounded-full bg-app-card border border-app-cyan/30 text-white text-[11px] shrink-0">
+          <span class="w-1.5 h-1.5 rounded-full bg-app-cyan"></span>
+          <span id="local-peer-pill-text-mobile">Device (You)</span>
+        </span>
+      </div>
+
+      <!-- ================= CHAT MESSAGE STREAM ================= -->
+      <div id="chat-messages" class="flex-1 min-h-0 overflow-y-auto p-3 md:p-6 space-y-3.5 md:space-y-4">
+        
+        <div id="date-separator" class="flex items-center justify-center my-1.5 md:my-2">
+          <span class="px-3 py-0.5 rounded-full bg-app-sidebar/90 border border-app-border text-[10px] md:text-[11px] font-mono text-app-muted shadow-sm">
+            Today
+          </span>
+        </div>
+
+        <div id="empty-state" class="flex flex-col items-center justify-center min-h-[40vh] text-center select-none px-4">
+          <div class="w-12 h-12 md:w-14 md:h-14 rounded-2xl bg-app-card border border-app-border flex items-center justify-center mb-3 shadow-lg text-app-cyan">
+            <i data-lucide="shield" class="w-5 h-5 md:w-6 md:h-6"></i>
+          </div>
+          <h3 class="text-sm font-semibold text-white mb-1">Encrypted Room Ready</h3>
+          <p class="text-xs text-app-muted font-mono max-w-xs leading-relaxed">
+            Scan the QR code or share the room link to connect your phone, PC, or tablet directly via WebRTC mesh.
+          </p>
+        </div>
+
+      </div>
+
+      <!-- ================= BOTTOM INPUT BARS ================= -->
+      <input type="file" id="input-file" class="hidden" multiple />
+      <input type="file" id="input-folder" class="hidden" webkitdirectory directory multiple />
+      <input type="file" id="input-media" class="hidden" accept="image/*,video/*" multiple />
+
+      <!-- 1. DESKTOP INPUT BAR -->
+      <div class="hidden md:block p-3 md:p-4 border-t border-app-border bg-app-sidebar/90 shrink-0 relative">
+        <div id="attach-menu" class="hidden absolute bottom-16 left-6 bg-app-card border border-app-border rounded-xl p-2 shadow-2xl space-y-1 z-20 text-xs font-medium w-48 animate-fade-in">
+          <button id="btn-attach-doc" class="w-full flex items-center space-x-2.5 px-3 py-2 rounded-lg hover:bg-app-sidebar text-slate-200 hover:text-white transition-colors cursor-pointer">
+            <i data-lucide="file-text" class="w-4 h-4 text-app-cyan"></i>
+            <span>Document / File</span>
+          </button>
+          <button id="btn-attach-folder" class="w-full flex items-center space-x-2.5 px-3 py-2 rounded-lg hover:bg-app-sidebar text-slate-200 hover:text-white transition-colors cursor-pointer">
+            <i data-lucide="folder" class="w-4 h-4 text-app-cyan"></i>
+            <span>Folder (Stream Zip)</span>
+          </button>
+          <button id="btn-attach-media" class="w-full flex items-center space-x-2.5 px-3 py-2 rounded-lg hover:bg-app-sidebar text-slate-200 hover:text-white transition-colors cursor-pointer">
+            <i data-lucide="image" class="w-4 h-4 text-app-cyan"></i>
+            <span>Photos & Videos</span>
+          </button>
+          <button id="btn-attach-camera" class="w-full flex items-center space-x-2.5 px-3 py-2 rounded-lg hover:bg-app-sidebar text-slate-200 hover:text-white transition-colors cursor-pointer">
+            <i data-lucide="camera" class="w-4 h-4 text-app-cyan"></i>
+            <span>Camera Snap</span>
+          </button>
+          <button id="btn-attach-screen" class="w-full flex items-center space-x-2.5 px-3 py-2 rounded-lg hover:bg-app-sidebar text-slate-200 hover:text-white transition-colors cursor-pointer">
+            <i data-lucide="monitor-up" class="w-4 h-4 text-app-cyan"></i>
+            <span>Screen Snippet</span>
+          </button>
+        </div>
+
+        <form id="chat-form" class="flex items-center space-x-2 max-w-5xl mx-auto">
+          <button type="button" id="btn-attach-toggle" class="p-2.5 rounded-xl bg-app-card hover:bg-app-cardHover border border-app-border text-app-muted hover:text-app-cyan transition-colors cursor-pointer" title="Attach file or media">
+            <i data-lucide="paperclip" class="w-4 h-4"></i>
+          </button>
+          <button type="button" id="btn-clipboard-send" class="p-2.5 rounded-xl bg-app-card hover:bg-app-cardHover border border-app-border text-app-muted hover:text-app-cyan transition-colors cursor-pointer" title="Send Clipboard">
+            <i data-lucide="clipboard-paste" class="w-4 h-4"></i>
+          </button>
+          <input type="text" id="chat-input" placeholder="Type a message or paste a link..." class="flex-1 bg-app-card border border-app-border focus:border-app-cyan text-white text-sm rounded-xl px-4 py-2.5 outline-none transition-colors" />
+          <button type="submit" id="btn-send-msg" class="p-2.5 rounded-xl bg-app-cyan hover:bg-app-cyanHover text-black font-semibold transition-all shadow-sm cursor-pointer">
+            <i data-lucide="send" class="w-4 h-4"></i>
+          </button>
+        </form>
+      </div>
+
+      <!-- 2. MOBILE INPUT BAR -->
+      <div class="block md:hidden p-2 pb-[max(0.65rem,env(safe-area-inset-bottom))] bg-app-sidebar/98 border-t border-app-border shrink-0 z-30 shadow-2xl">
+        <form id="chat-form-mobile" class="flex items-center space-x-2">
+          <div class="flex-1 flex items-center bg-app-card border border-app-border/80 focus-within:border-app-cyan/60 rounded-full px-2 py-1 transition-all shadow-inner">
+            <button type="button" id="btn-attach-toggle-mobile" class="p-2 text-app-muted hover:text-app-cyan active:scale-95 transition-transform cursor-pointer" title="Attach">
+              <i data-lucide="paperclip" class="w-4 h-4"></i>
+            </button>
+            <input type="text" id="chat-input-mobile" placeholder="Message..." autocomplete="off" class="flex-1 bg-transparent border-none text-white text-xs px-2 py-1 outline-none placeholder:text-app-muted/60" />
+            <button type="button" id="btn-clipboard-send-mobile" class="p-2 text-app-muted hover:text-app-cyan active:scale-95 transition-transform cursor-pointer" title="Paste Clipboard">
+              <i data-lucide="clipboard-paste" class="w-4 h-4"></i>
+            </button>
+            <button type="button" id="btn-attach-camera-mobile" class="p-2 text-app-muted hover:text-app-cyan active:scale-95 transition-transform cursor-pointer" title="Camera">
+              <i data-lucide="camera" class="w-4 h-4"></i>
+            </button>
+          </div>
+          <button type="submit" id="btn-send-msg-mobile" class="w-10 h-10 rounded-full bg-app-cyan hover:bg-app-cyanHover text-black flex items-center justify-center shrink-0 shadow-lg active:scale-90 transition-transform cursor-pointer">
+            <i data-lucide="send" class="w-4 h-4 translate-x-0.5"></i>
+          </button>
+        </form>
+      </div>
+    </main>
+
+    <!-- ================= RIGHT SIDEBAR: PERSISTENT ENCRYPTED VAULT ================= -->
+    <aside id="vault-sidebar" class="w-full md:w-96 border-l border-app-border bg-app-sidebar flex flex-col transition-all duration-300 translate-x-full absolute right-0 top-0 bottom-0 z-40 shadow-2xl">
+      <div class="p-4 border-b border-app-border flex items-center justify-between">
+        <div class="flex items-center space-x-2">
+          <i data-lucide="shield-check" class="w-4 h-4 text-app-cyan"></i>
+          <h3 class="text-xs font-mono font-bold uppercase tracking-wider text-white">Encrypted Vault (SQLite)</h3>
+        </div>
+        <button id="btn-close-vault" class="p-1 rounded-lg text-app-muted hover:text-white hover:bg-app-card cursor-pointer">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      <div class="p-3 bg-app-card/60 border-b border-app-border text-[11px] text-app-muted font-mono">
+        🔒 Client-side AES-256-GCM encrypted notes & files (&le;10MB). Accessible anytime even when peers are offline.
+      </div>
+      <input type="file" id="input-vault-file" class="hidden" />
+      <div class="flex-1 overflow-y-auto p-4 space-y-3">
+        <div class="grid grid-cols-2 gap-2 mb-3">
+          <button id="btn-add-vault-note" class="py-2 px-3 bg-app-cyan text-black font-semibold text-xs rounded-lg hover:bg-app-cyanHover transition-all flex items-center justify-center gap-1 cursor-pointer">
+            <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+            <span>Add Note</span>
+          </button>
+          <button id="btn-add-vault-file" class="py-2 px-3 bg-app-card border border-app-border text-slate-200 hover:text-white text-xs rounded-lg hover:border-app-cyan transition-all flex items-center justify-center gap-1 cursor-pointer">
+            <i data-lucide="paperclip" class="w-3.5 h-3.5 text-app-cyan"></i>
+            <span>Add File</span>
+          </button>
+        </div>
+        <div id="vault-note-editor" class="hidden bg-app-card border border-app-cyan/40 rounded-xl p-3 space-y-2 mb-3 animate-fade-in">
+          <input type="text" id="vault-note-title" placeholder="Note Title (e.g. Wi-Fi Password)" class="w-full bg-app-sidebar border border-app-border focus:border-app-cyan text-white text-xs rounded-lg px-3 py-2 outline-none">
+          <textarea id="vault-note-content" placeholder="Secret text or snippet..." rows="3" class="w-full bg-app-sidebar border border-app-border focus:border-app-cyan text-white text-xs font-mono rounded-lg px-3 py-2 outline-none resize-none"></textarea>
+          <div class="flex gap-2">
+            <button id="btn-save-vault-note" class="flex-1 py-1.5 bg-app-cyan hover:bg-app-cyanHover text-black text-xs font-bold rounded-lg cursor-pointer">Save Encrypted</button>
+            <button id="btn-cancel-vault-note" class="flex-1 py-1.5 bg-app-sidebar border border-app-border text-app-muted hover:text-white text-xs rounded-lg cursor-pointer">Cancel</button>
+          </div>
+        </div>
+        <div id="vault-items-container" class="space-y-2"></div>
+      </div>
+    </aside>
+  </div>
+
+  <!-- ================= MOBILE SHEETS ================= -->
+  <div id="mobile-attach-backdrop" class="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 hidden md:hidden"></div>
+  <div id="mobile-attach-sheet" class="fixed bottom-0 left-0 right-0 bg-app-sidebar border-t border-app-border rounded-t-3xl p-5 z-50 transform translate-y-full transition-transform duration-200 md:hidden">
+    <div class="w-12 h-1 bg-app-border rounded-full mx-auto mb-4"></div>
+    <h3 class="text-xs font-mono uppercase text-app-muted tracking-wider text-center mb-4">Send P2P Encrypted</h3>
+    <div class="grid grid-cols-3 gap-4 text-center">
+      <button id="btn-mobile-attach-doc" class="flex flex-col items-center group cursor-pointer">
+        <div class="w-12 h-12 rounded-2xl bg-blue-500/15 border border-blue-500/30 text-blue-400 flex items-center justify-center mb-1.5 active:scale-95 transition-transform"><i data-lucide="file-text" class="w-6 h-6"></i></div>
+        <span class="text-[11px] text-slate-200">Document</span>
+      </button>
+      <button id="btn-mobile-attach-folder" class="flex flex-col items-center group cursor-pointer">
+        <div class="w-12 h-12 rounded-2xl bg-amber-500/15 border border-amber-500/30 text-amber-400 flex items-center justify-center mb-1.5 active:scale-95 transition-transform"><i data-lucide="folder" class="w-6 h-6"></i></div>
+        <span class="text-[11px] text-slate-200">Folder Zip</span>
+      </button>
+      <button id="btn-mobile-attach-media" class="flex flex-col items-center group cursor-pointer">
+        <div class="w-12 h-12 rounded-2xl bg-purple-500/15 border border-purple-500/30 text-purple-400 flex items-center justify-center mb-1.5 active:scale-95 transition-transform"><i data-lucide="image" class="w-6 h-6"></i></div>
+        <span class="text-[11px] text-slate-200">Gallery</span>
+      </button>
+      <button id="btn-mobile-attach-camera" class="flex flex-col items-center group cursor-pointer">
+        <div class="w-12 h-12 rounded-2xl bg-pink-500/15 border border-pink-500/30 text-pink-400 flex items-center justify-center mb-1.5 active:scale-95 transition-transform"><i data-lucide="camera" class="w-6 h-6"></i></div>
+        <span class="text-[11px] text-slate-200">Camera</span>
+      </button>
+      <button id="btn-mobile-attach-screen" class="flex flex-col items-center group cursor-pointer">
+        <div class="w-12 h-12 rounded-2xl bg-cyan-500/15 border border-cyan-500/30 text-cyan-400 flex items-center justify-center mb-1.5 active:scale-95 transition-transform"><i data-lucide="monitor-up" class="w-6 h-6"></i></div>
+        <span class="text-[11px] text-slate-200">Screen</span>
+      </button>
+      <button id="btn-mobile-attach-vault" class="flex flex-col items-center group cursor-pointer">
+        <div class="w-12 h-12 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 flex items-center justify-center mb-1.5 active:scale-95 transition-transform"><i data-lucide="lock" class="w-6 h-6"></i></div>
+        <span class="text-[11px] text-slate-200">Vault DB</span>
+      </button>
+    </div>
+  </div>
+
+  <div id="mobile-info-sheet" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex flex-col justify-end hidden md:hidden">
+    <div class="bg-app-sidebar border-t border-app-border rounded-t-3xl p-5 max-h-[85vh] overflow-y-auto space-y-4">
+      <div class="flex items-center justify-between pb-2 border-b border-app-border">
+        <div class="flex items-center space-x-2"><i data-lucide="shield" class="w-4 h-4 text-app-cyan"></i><h3 class="text-sm font-semibold text-white">Room Details & Peers</h3></div>
+        <button id="btn-close-mobile-info" class="p-1 text-app-muted hover:text-white cursor-pointer"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+      <div class="bg-app-card border border-app-border rounded-2xl p-3 flex items-center justify-between">
+        <div>
+          <span class="text-[10px] text-app-muted font-mono block">ROOM PASSCODE</span>
+          <span id="mobile-sheet-room-id" class="text-sm font-mono font-bold text-app-cyan tracking-wider">CYBER-7429</span>
+        </div>
+        <div class="flex items-center space-x-2">
+          <button id="btn-mobile-sheet-copy-code" class="px-2.5 py-1 bg-app-sidebar border border-app-border rounded-lg text-xs text-white hover:border-app-cyan cursor-pointer">Copy</button>
+          <button id="btn-mobile-sheet-open-qr" class="px-2.5 py-1 bg-app-cyan text-black font-semibold rounded-lg text-xs cursor-pointer">QR</button>
+        </div>
+      </div>
+      <div>
+        <h4 class="text-xs font-mono uppercase text-app-muted mb-2">Connected Mesh Devices</h4>
+        <div id="mobile-mesh-devices-list" class="space-y-2"></div>
+      </div>
+      <button id="btn-mobile-share-link" class="w-full py-2.5 bg-app-card border border-app-cyan text-app-cyan hover:bg-app-cyan hover:text-black font-semibold text-xs rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer">
+        <i data-lucide="share-2" class="w-4 h-4"></i>
+        <span>Share Room Link</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- ================= PAIR DEVICE / QR CODE MODAL ================= -->
+  <div id="qr-modal" class="fixed inset-0 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden">
+    <div class="bg-app-sidebar border border-app-border rounded-2xl max-w-sm w-full p-5 md:p-6 shadow-2xl relative animate-fade-in">
+      <button id="btn-close-qr-modal" class="absolute top-4 right-4 text-app-muted hover:text-white cursor-pointer">
+        <i data-lucide="x" class="w-4 h-4"></i>
+      </button>
+      <div class="text-center mb-4">
+        <h3 class="text-sm font-semibold text-white">Pair Another Device</h3>
+        <p class="text-xs text-app-muted mt-0.5">Scan from mobile or share room code</p>
+      </div>
+      <div id="qr-container" class="bg-white p-3 rounded-xl mx-auto w-44 h-44 flex items-center justify-center mb-4 shadow-inner"></div>
+      <div class="flex items-center justify-between bg-app-card border border-app-border rounded-xl px-3.5 py-2 mb-3">
+        <div class="text-left">
+          <span class="text-xs text-slate-100 block font-semibold">1-Click Auto Join</span>
+          <span class="text-[10px] text-app-muted block font-mono">Includes passphrase in URL hash</span>
+        </div>
+        <input type="checkbox" id="toggle-include-pass" checked class="accent-app-cyan h-4 w-4 rounded cursor-pointer" />
+      </div>
+      <div class="bg-app-card border border-app-border rounded-xl p-2.5 flex items-center justify-between mb-2">
+        <div>
+          <span class="text-[10px] text-app-muted block font-mono">ROOM CODE</span>
+          <span id="modal-room-code" class="text-sm font-mono font-bold text-app-cyan tracking-wider">CYBER-7429</span>
+        </div>
+        <button id="btn-copy-modal-code" class="px-2.5 py-1 bg-app-sidebar hover:border-app-cyan border border-app-border rounded text-xs text-white cursor-pointer">Copy</button>
+      </div>
+      <div class="bg-app-card border border-app-border rounded-xl p-2.5 flex items-center justify-between mb-4">
+        <div class="min-w-0 flex-1 mr-2">
+          <span class="text-[10px] text-app-muted block font-mono">PASSPHRASE</span>
+          <span id="modal-room-passphrase" class="text-xs font-mono text-white tracking-wide truncate block mt-0.5">••••••••</span>
+        </div>
+        <div class="flex items-center gap-1">
+          <button id="btn-toggle-pass-visibility" class="p-1 text-app-muted hover:text-white cursor-pointer"><i data-lucide="eye" class="w-3.5 h-3.5"></i></button>
+          <button id="btn-copy-modal-pass" class="px-2.5 py-1 bg-app-sidebar hover:border-app-cyan border border-app-border rounded text-xs text-white cursor-pointer">Copy</button>
+        </div>
+      </div>
+      <button id="btn-copy-direct-link" class="w-full py-2.5 bg-app-cyan hover:bg-app-cyanHover text-black font-semibold text-xs rounded-xl transition-all cursor-pointer shadow-sm">
+        Copy Direct Room Link
+      </button>
+    </div>
+  </div>
+
+  <!-- ================= UNLOCK ROOM OVERLAY ================= -->
+  <div id="unlock-overlay" class="fixed inset-0 bg-app-bg z-50 flex items-center justify-center p-4 hidden">
+    <div class="w-full max-w-sm sm:max-w-md my-auto animate-fade-in">
+      <div class="text-center mb-6">
+        <div class="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-app-cyanDim border border-app-cyan/30 flex items-center justify-center text-app-cyan mx-auto mb-3 shadow-[0_0_15px_rgba(0,255,255,0.15)]">
+          <i data-lucide="lock" class="w-6 h-6 sm:w-7 sm:h-7"></i>
+        </div>
+        <h2 class="text-lg sm:text-xl font-bold text-white tracking-tight">Unlock Room <span id="unlock-room-id-display"></span></h2>
+        <p class="text-xs text-app-muted mt-1 font-mono">Enter passphrase to connect to P2P mesh</p>
+      </div>
+
+      <form id="unlock-form" class="bg-app-card border border-app-border rounded-2xl sm:rounded-3xl p-5 sm:p-7 shadow-2xl space-y-4">
+        <div>
+          <label class="text-[11px] text-app-muted font-mono block mb-1.5 font-medium">ROOM PASSPHRASE</label>
+          <input type="password" id="unlock-passphrase-input" placeholder="Enter room passphrase..." class="w-full bg-app-sidebar border border-app-border focus:border-app-cyan text-white text-sm rounded-xl px-4 py-3 outline-none transition-colors" required autofocus />
+        </div>
+        <div class="flex gap-2.5 pt-1">
+          <button type="button" onclick="window.location.href='/'" class="flex-1 py-3 bg-app-sidebar hover:bg-app-cardHover border border-app-border hover:text-white text-app-muted text-xs font-semibold rounded-xl transition-all cursor-pointer">Back</button>
+          <button type="submit" id="btn-submit-unlock" class="flex-2 py-3 bg-app-cyan hover:bg-app-cyanHover text-black text-xs font-bold rounded-xl transition-all cursor-pointer shadow-md">Unlock & Join</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 translate-y-20 opacity-0 transition-all duration-300 pointer-events-none">
+    <div class="bg-app-card border border-app-cyan/50 px-4 py-2.5 rounded-full text-xs font-mono text-white flex items-center space-x-2 shadow-xl">
+      <span class="w-1.5 h-1.5 rounded-full bg-app-cyan"></span>
+      <span id="toast-msg">Notification</span>
+    </div>
+  </div>
+
+  <script>
+    if (window.lucide) { lucide.createIcons(); }
+    document.addEventListener('DOMContentLoaded', () => { if (window.lucide) lucide.createIcons(); });
+  </script>
+  <script type="module" src="/js/room.js"></script>
+</body>
+</html>

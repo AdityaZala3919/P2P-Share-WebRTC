@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html lang="en" class="dark">
+<html lang="en" class="dark h-full">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <title>NEXUS // Minimalist P2P Chat & Vault</title>
   
   <!-- Tailwind CSS CDN -->
@@ -44,6 +44,17 @@
   </script>
 
   <style>
+    html, body {
+      height: 100%;
+      height: 100dvh;
+      height: -webkit-fill-available;
+      width: 100%;
+      overflow: hidden;
+      margin: 0;
+      padding: 0;
+      position: fixed;
+      inset: 0;
+    }
     body {
       background-color: #08090C;
     }
@@ -62,13 +73,23 @@
     ::-webkit-scrollbar-thumb:hover {
       background: #00FFFF;
     }
+    /* Utility to hide scrollbars on mobile chips */
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
   </style>
 </head>
 
-<body class="text-app-text h-screen flex flex-col font-sans selection:bg-app-cyan selection:text-black overflow-hidden">
+<body class="text-app-text h-full h-[100dvh] flex flex-col font-sans selection:bg-app-cyan selection:text-black overflow-hidden bg-app-bg fixed inset-0">
 
-  <!-- ================= TOP MINIMAL APP HEADER ================= -->
-  <header class="h-14 border-b border-app-border bg-app-sidebar/80 backdrop-blur-md px-4 sm:px-6 flex items-center justify-between z-30 shrink-0">
+  <!-- ================= TOP APP HEADER ================= -->
+  
+  <!-- 1. DESKTOP / PC HEADER (Exact original untouched view for >= md) -->
+  <header class="hidden md:flex h-14 border-b border-app-border bg-app-sidebar/80 backdrop-blur-md px-6 items-center justify-between z-30 shrink-0">
     
     <!-- Left: Room & Online Status -->
     <div class="flex items-center space-x-3">
@@ -88,7 +109,7 @@
     </div>
 
     <!-- Right: Minimal Actions (Pair QR, Toggle Vault, Nickname) -->
-    <div class="flex items-center space-x-2 sm:space-x-3">
+    <div class="flex items-center space-x-3">
       
       <!-- Vault Toggle Button -->
       <button onclick="toggleVaultSidebar()" id="vault-btn" class="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border border-app-border hover:border-app-cyan text-app-muted hover:text-white transition-all bg-app-card">
@@ -104,7 +125,7 @@
       </button>
 
       <!-- User Device Pill -->
-      <div class="hidden sm:flex items-center space-x-1.5 bg-app-card border border-app-border px-2.5 py-1.5 rounded-lg text-xs text-app-muted">
+      <div class="flex items-center space-x-1.5 bg-app-card border border-app-border px-2.5 py-1.5 rounded-lg text-xs text-app-muted">
         <i data-lucide="laptop" class="w-3.5 h-3.5 text-app-cyan"></i>
         <span class="text-white font-medium" id="my-device-name">Work PC (You)</span>
         <button onclick="editDeviceName()" class="hover:text-app-cyan ml-1">
@@ -115,14 +136,88 @@
     </div>
   </header>
 
+  <!-- 2. MOBILE PHONE APP BAR (WhatsApp / Telegram Style for < md) -->
+  <header class="flex md:hidden h-14 border-b border-app-border bg-app-sidebar/95 backdrop-blur-md px-3 items-center justify-between z-30 shrink-0 select-none">
+    
+    <!-- Mobile Left: Avatar + Title & Subtitle (Tappable for Room Info) -->
+    <div onclick="toggleMobileRoomInfo(true)" class="flex items-center space-x-2.5 min-w-0 flex-1 cursor-pointer active:opacity-80">
+      <!-- Shield Avatar with online indicator -->
+      <div class="relative shrink-0">
+        <div class="w-9 h-9 rounded-full bg-app-card border border-app-cyan/40 flex items-center justify-center text-app-cyan shadow-sm">
+          <i data-lucide="shield" class="w-4 h-4"></i>
+        </div>
+        <span class="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-app-green ring-2 ring-app-sidebar"></span>
+      </div>
+      
+      <!-- Room Title & Info -->
+      <div class="min-w-0 flex-1">
+        <div class="flex items-center space-x-1.5">
+          <h1 class="font-semibold text-sm text-white truncate">Encrypted Room</h1>
+          <span class="text-[10px] font-mono font-medium px-1.5 py-0.2 rounded bg-app-card border border-app-cyan/30 text-app-cyan shrink-0">CYBER-7429</span>
+        </div>
+        <p class="text-[11px] text-app-muted font-mono flex items-center gap-1 truncate">
+          <span>3 peers online</span>
+          <span class="text-app-muted/60">•</span>
+          <span class="text-app-cyan font-sans text-[10px]">tap for info</span>
+        </p>
+      </div>
+    </div>
+
+    <!-- Mobile Right: Action Icons (Vault, Pair QR, 3-dots Menu) -->
+    <div class="flex items-center space-x-1 shrink-0">
+      <!-- Vault Button -->
+      <button onclick="toggleVaultSidebar()" class="w-9 h-9 rounded-full hover:bg-app-card flex items-center justify-center text-app-muted hover:text-white transition-colors relative" title="Encrypted Vault">
+        <i data-lucide="lock" class="w-4 h-4 text-app-cyan"></i>
+        <span class="absolute top-2 right-2 w-2 h-2 rounded-full bg-app-cyan ring-1 ring-app-sidebar"></span>
+      </button>
+
+      <!-- Pair Device QR Button -->
+      <button onclick="toggleQRModal(true)" class="w-9 h-9 rounded-full hover:bg-app-card flex items-center justify-center text-app-cyan transition-colors" title="Pair Device">
+        <i data-lucide="qr-code" class="w-4 h-4"></i>
+      </button>
+
+      <!-- 3-Dots Menu -->
+      <div class="relative">
+        <button onclick="toggleMobileMenu()" id="mobile-menu-btn" class="w-9 h-9 rounded-full hover:bg-app-card flex items-center justify-center text-app-muted hover:text-white transition-colors">
+          <i data-lucide="more-vertical" class="w-4 h-4"></i>
+        </button>
+
+        <!-- Telegram / WhatsApp style dropdown popup -->
+        <div id="mobile-menu-dropdown" class="hidden absolute right-0 top-11 w-52 bg-app-card border border-app-border rounded-xl shadow-2xl py-1.5 z-50 text-xs">
+          <button onclick="toggleMobileRoomInfo(true); toggleMobileMenu();" class="w-full px-3.5 py-2.5 flex items-center space-x-2.5 hover:bg-app-sidebar text-slate-200 text-left">
+            <i data-lucide="info" class="w-4 h-4 text-app-cyan"></i>
+            <span>Room & Peer Info</span>
+          </button>
+          <button onclick="toggleQRModal(true); toggleMobileMenu();" class="w-full px-3.5 py-2.5 flex items-center space-x-2.5 hover:bg-app-sidebar text-slate-200 text-left">
+            <i data-lucide="qr-code" class="w-4 h-4 text-app-cyan"></i>
+            <span>Pair New Device</span>
+          </button>
+          <button onclick="toggleVaultSidebar(true); toggleMobileMenu();" class="w-full px-3.5 py-2.5 flex items-center space-x-2.5 hover:bg-app-sidebar text-slate-200 text-left">
+            <i data-lucide="shield-check" class="w-4 h-4 text-app-cyan"></i>
+            <span>Encrypted Vault (DB)</span>
+          </button>
+          <button onclick="editDeviceName(); toggleMobileMenu();" class="w-full px-3.5 py-2.5 flex items-center space-x-2.5 hover:bg-app-sidebar text-slate-200 text-left">
+            <i data-lucide="smartphone" class="w-4 h-4 text-app-cyan"></i>
+            <span>Rename My Device</span>
+          </button>
+          <div class="h-px bg-app-border my-1"></div>
+          <button onclick="copyToClipboard(window.location.origin + '/#room=CYBER-7429'); toggleMobileMenu();" class="w-full px-3.5 py-2.5 flex items-center space-x-2.5 hover:bg-app-sidebar text-app-cyan text-left">
+            <i data-lucide="link-2" class="w-4 h-4"></i>
+            <span>Copy Room Link</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
   <!-- ================= MAIN CONTENT WRAPPER ================= -->
-  <div class="flex-1 flex overflow-hidden relative">
+  <div class="flex-1 min-h-0 flex overflow-hidden relative">
 
     <!-- ================= CHAT VIEW (PRIMARY AREA) ================= -->
-    <main class="flex-1 flex flex-col bg-app-bg relative">
+    <main class="flex-1 min-h-0 flex flex-col bg-app-bg relative overflow-hidden">
       
-      <!-- Connected Devices Sub-header Pill Strip -->
-      <div class="px-6 py-2 border-b border-app-border/60 bg-app-sidebar/40 flex items-center justify-between text-xs shrink-0">
+      <!-- 1. DESKTOP Connected Devices Sub-header (>= md) -->
+      <div class="hidden md:flex px-6 py-2 border-b border-app-border/60 bg-app-sidebar/40 items-center justify-between text-xs shrink-0">
         <div class="flex items-center space-x-2 overflow-x-auto">
           <span class="text-[11px] text-app-muted font-mono uppercase tracking-wider">Peers:</span>
           
@@ -142,58 +237,78 @@
           </span>
         </div>
 
-        <span class="text-[11px] text-app-muted font-mono hidden md:inline">End-to-End Encrypted WebRTC</span>
+        <span class="text-[11px] text-app-muted font-mono">End-to-End Encrypted WebRTC</span>
+      </div>
+
+      <!-- 2. MOBILE Connected Devices Strip (< md: Horizontal Scrollable Chips) -->
+      <div class="flex md:hidden items-center space-x-2 px-3 py-1.5 border-b border-app-border/40 bg-app-sidebar/50 overflow-x-auto no-scrollbar shrink-0 text-xs select-none">
+        <span class="text-[10px] text-app-muted font-mono uppercase shrink-0">Peers:</span>
+        
+        <div class="flex items-center space-x-1.5 shrink-0 px-2 py-0.5 rounded-full bg-app-card border border-app-cyan/40 text-white text-[11px]">
+          <span class="w-1.5 h-1.5 rounded-full bg-app-cyan"></span>
+          <span class="font-medium">Work PC (You)</span>
+        </div>
+
+        <div class="flex items-center space-x-1.5 shrink-0 px-2 py-0.5 rounded-full bg-app-card border border-app-border text-slate-300 text-[11px]">
+          <span class="w-1.5 h-1.5 rounded-full bg-app-green"></span>
+          <span>Personal Phone</span>
+        </div>
+
+        <div class="flex items-center space-x-1.5 shrink-0 px-2 py-0.5 rounded-full bg-app-card border border-app-border text-slate-300 text-[11px]">
+          <span class="w-1.5 h-1.5 rounded-full bg-app-green"></span>
+          <span>Home MacBook</span>
+        </div>
       </div>
 
       <!-- ================= CHAT MESSAGE STREAM ================= -->
-      <div id="chat-messages" class="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
+      <div id="chat-messages" class="flex-1 min-h-0 overflow-y-auto p-3 md:p-6 space-y-3.5 md:space-y-4">
 
-        <!-- Date separator -->
-        <div class="flex items-center justify-center my-2">
-          <span class="px-3 py-0.5 rounded-full bg-app-sidebar border border-app-border text-[11px] font-mono text-app-muted">
+        <!-- Date separator (WhatsApp / Telegram style pill) -->
+        <div class="flex items-center justify-center my-1.5 md:my-2">
+          <span class="px-3 py-0.5 rounded-full bg-app-sidebar/90 border border-app-border text-[10px] md:text-[11px] font-mono text-app-muted shadow-sm">
             Today
           </span>
         </div>
 
         <!-- 1. Text Message (Received from Phone) -->
-        <div class="flex items-start space-x-2.5 max-w-xl">
+        <div class="flex items-start space-x-2 md:space-x-2.5 max-w-[90%] md:max-w-xl">
           <div class="w-7 h-7 rounded-full bg-app-card border border-app-border flex items-center justify-center text-app-green text-xs font-mono shrink-0">
             <i data-lucide="smartphone" class="w-3.5 h-3.5"></i>
           </div>
-          <div class="flex flex-col items-start">
-            <span class="text-[11px] font-medium text-app-muted mb-1 ml-1">Personal Phone</span>
-            <div class="bg-app-card border border-app-border rounded-2xl rounded-tl-sm px-4 py-2.5 text-sm text-slate-100 shadow-sm leading-relaxed">
+          <div class="flex flex-col items-start min-w-0">
+            <span class="text-[10px] md:text-[11px] font-semibold text-app-green mb-0.5 ml-1">Personal Phone</span>
+            <div class="bg-app-card border border-app-border rounded-2xl rounded-tl-sm px-3.5 md:px-4 py-2 md:py-2.5 text-xs md:text-sm text-slate-100 shadow-sm leading-relaxed">
               Hey! Just connected from my phone. Let me send over that video recording.
-              <span class="block text-[10px] text-app-muted font-mono text-right mt-1">19:42</span>
+              <span class="block text-[9px] md:text-[10px] text-app-muted font-mono text-right mt-1">19:42</span>
             </div>
           </div>
         </div>
 
         <!-- 2. Active Streaming File Transfer Bubble (ToffeeShare Style inside Chat) -->
-        <div class="flex items-start space-x-2.5 max-w-xl">
+        <div class="flex items-start space-x-2 md:space-x-2.5 max-w-[92%] md:max-w-xl">
           <div class="w-7 h-7 rounded-full bg-app-card border border-app-border flex items-center justify-center text-app-green text-xs font-mono shrink-0">
             <i data-lucide="smartphone" class="w-3.5 h-3.5"></i>
           </div>
-          <div class="flex flex-col items-start w-full sm:w-[380px]">
-            <span class="text-[11px] font-medium text-app-muted mb-1 ml-1">Personal Phone</span>
+          <div class="flex flex-col items-start w-full md:w-[380px] min-w-0">
+            <span class="text-[10px] md:text-[11px] font-semibold text-app-green mb-0.5 ml-1">Personal Phone</span>
             
-            <div class="bg-app-card border border-app-cyan/40 rounded-2xl rounded-tl-sm p-3.5 w-full shadow-lg">
-              <div class="flex items-center space-x-3 mb-2.5">
-                <div class="w-10 h-10 rounded-xl bg-app-cyanDim border border-app-cyan/40 flex items-center justify-center text-app-cyan shrink-0">
-                  <i data-lucide="video" class="w-5 h-5"></i>
+            <div class="bg-app-card border border-app-cyan/40 rounded-2xl rounded-tl-sm p-3 md:p-3.5 w-full shadow-lg">
+              <div class="flex items-center space-x-2.5 md:space-x-3 mb-2 md:mb-2.5">
+                <div class="w-9 h-9 md:w-10 md:h-10 rounded-xl bg-app-cyanDim border border-app-cyan/40 flex items-center justify-center text-app-cyan shrink-0">
+                  <i data-lucide="video" class="w-4 h-4 md:w-5 md:h-5"></i>
                 </div>
                 <div class="min-w-0 flex-1">
                   <h4 class="text-xs font-semibold text-white truncate">Demo_Walkthrough_4K.mp4</h4>
-                  <p class="text-[11px] text-app-muted font-mono">1.4 GB / 2.1 GB · <span class="text-app-cyan font-bold">48.5 MB/s</span></p>
+                  <p class="text-[10px] md:text-[11px] text-app-muted font-mono truncate">1.4 GB / 2.1 GB · <span class="text-app-cyan font-bold">48.5 MB/s</span></p>
                 </div>
               </div>
 
               <!-- Stream Progress Bar -->
-              <div class="w-full bg-app-sidebar h-1.5 rounded-full overflow-hidden mb-2">
+              <div class="w-full bg-app-sidebar h-1.5 rounded-full overflow-hidden mb-1.5 md:mb-2">
                 <div class="bg-app-cyan h-full rounded-full transition-all duration-300" style="width: 68%;"></div>
               </div>
 
-              <div class="flex items-center justify-between text-[11px] font-mono text-app-muted">
+              <div class="flex items-center justify-between text-[10px] md:text-[11px] font-mono text-app-muted">
                 <span class="text-app-green">Streaming P2P (68%)</span>
                 <span>ETA: 14s</span>
               </div>
@@ -203,66 +318,74 @@
         </div>
 
         <!-- 3. Sent Message from Self (Work PC) -->
-        <div class="flex items-start justify-end space-x-2.5 ml-auto max-w-xl">
-          <div class="flex flex-col items-end">
-            <span class="text-[11px] font-medium text-app-cyan mb-1 mr-1">Work PC (You)</span>
-            <div class="bg-app-cyanDim border border-app-cyan/40 rounded-2xl rounded-tr-sm px-4 py-2.5 text-sm text-white shadow-sm leading-relaxed">
+        <div class="flex items-start justify-end space-x-2 md:space-x-2.5 ml-auto max-w-[90%] md:max-w-xl">
+          <div class="flex flex-col items-end min-w-0">
+            <span class="text-[10px] md:text-[11px] font-medium text-app-cyan mb-0.5 mr-1 hidden md:block">Work PC (You)</span>
+            <div class="bg-app-cyanDim border border-app-cyan/40 rounded-2xl rounded-tr-sm px-3.5 md:px-4 py-2 md:py-2.5 text-xs md:text-sm text-white shadow-sm leading-relaxed">
               Receiving it at 48 MB/s! I'm also dropping the project folder here.
-              <span class="block text-[10px] text-app-muted font-mono text-right mt-1">19:44</span>
+              <span class="flex items-center justify-end gap-1 text-[9px] md:text-[10px] text-slate-300/80 font-mono text-right mt-1">
+                19:44
+                <i data-lucide="check-check" class="w-3 h-3 text-app-cyan"></i>
+              </span>
             </div>
           </div>
         </div>
 
         <!-- 4. Sent Folder Bubble (Auto-zipped P2P Stream) -->
-        <div class="flex items-start justify-end space-x-2.5 ml-auto max-w-xl">
-          <div class="flex flex-col items-end w-full sm:w-[380px]">
-            <span class="text-[11px] font-medium text-app-cyan mb-1 mr-1">Work PC (You)</span>
+        <div class="flex items-start justify-end space-x-2 md:space-x-2.5 ml-auto max-w-[92%] md:max-w-xl">
+          <div class="flex flex-col items-end w-full md:w-[380px] min-w-0">
+            <span class="text-[10px] md:text-[11px] font-medium text-app-cyan mb-0.5 mr-1 hidden md:block">Work PC (You)</span>
             
-            <div class="bg-app-card border border-app-border rounded-2xl rounded-tr-sm p-3.5 w-full shadow-sm">
-              <div class="flex items-center space-x-3 mb-2">
-                <div class="w-10 h-10 rounded-xl bg-app-sidebar border border-app-border flex items-center justify-center text-app-cyan shrink-0">
-                  <i data-lucide="folder-archive" class="w-5 h-5"></i>
+            <div class="bg-app-card border border-app-border rounded-2xl rounded-tr-sm p-3 md:p-3.5 w-full shadow-sm">
+              <div class="flex items-center space-x-2.5 md:space-x-3 mb-1.5 md:mb-2">
+                <div class="w-9 h-9 md:w-10 md:h-10 rounded-xl bg-app-sidebar border border-app-border flex items-center justify-center text-app-cyan shrink-0">
+                  <i data-lucide="folder-archive" class="w-4 h-4 md:w-5 md:h-5"></i>
                 </div>
                 <div class="min-w-0 flex-1">
                   <h4 class="text-xs font-semibold text-white truncate">Source_Code_Assets.zip</h4>
-                  <p class="text-[11px] text-app-muted font-mono">Folder (42 files) · 38.4 MB</p>
+                  <p class="text-[10px] md:text-[11px] text-app-muted font-mono truncate">Folder (42 files) · 38.4 MB</p>
                 </div>
-                <button class="px-2.5 py-1 bg-app-sidebar hover:bg-app-cyan hover:text-black border border-app-border text-xs font-mono text-white rounded transition-all flex items-center gap-1">
+                <button onclick="showToast('Downloading Source_Code_Assets.zip')" class="px-2.5 py-1 bg-app-sidebar hover:bg-app-cyan hover:text-black border border-app-border text-xs font-mono text-white rounded transition-all flex items-center gap-1 shrink-0">
                   <i data-lucide="download" class="w-3.5 h-3.5"></i>
                 </button>
               </div>
-              <span class="text-[10px] text-app-green font-mono">✓ Sent to 2 peers</span>
+              <div class="flex items-center justify-between text-[9px] md:text-[10px] font-mono text-app-muted">
+                <span class="text-app-green">✓ Sent to 2 peers</span>
+                <span class="text-slate-400 flex items-center gap-0.5">19:45 <i data-lucide="check-check" class="w-3 h-3 text-app-cyan inline"></i></span>
+              </div>
             </div>
           </div>
         </div>
 
         <!-- 5. 1-Click Clipboard Bubble -->
-        <div class="flex items-start space-x-2.5 max-w-xl">
+        <div class="flex items-start space-x-2 md:space-x-2.5 max-w-[92%] md:max-w-xl">
           <div class="w-7 h-7 rounded-full bg-app-card border border-app-border flex items-center justify-center text-app-green text-xs font-mono shrink-0">
             <i data-lucide="monitor" class="w-3.5 h-3.5"></i>
           </div>
-          <div class="flex flex-col items-start w-full sm:w-[380px]">
-            <span class="text-[11px] font-medium text-app-muted mb-1 ml-1">Home MacBook</span>
-            <div class="bg-app-card border border-app-border rounded-2xl rounded-tl-sm p-3.5 w-full">
-              <div class="flex items-center justify-between pb-1.5 mb-1.5 border-b border-app-border text-[11px] text-app-cyan font-mono">
+          <div class="flex flex-col items-start w-full md:w-[380px] min-w-0">
+            <span class="text-[10px] md:text-[11px] font-semibold text-slate-300 mb-0.5 ml-1">Home MacBook</span>
+            <div class="bg-app-card border border-app-border rounded-2xl rounded-tl-sm p-3 md:p-3.5 w-full">
+              <div class="flex items-center justify-between pb-1.5 mb-1.5 border-b border-app-border text-[10px] md:text-[11px] text-app-cyan font-mono">
                 <span class="flex items-center gap-1"><i data-lucide="clipboard" class="w-3 h-3"></i> CLIPBOARD</span>
-                <button onclick="copyToClipboard('https://github.com/example/p2p-hub')" class="hover:underline flex items-center gap-1 text-[11px]">
+                <button onclick="copyToClipboard('https://github.com/example/p2p-hub')" class="hover:underline flex items-center gap-1 text-[10px] md:text-[11px]">
                   <i data-lucide="copy" class="w-3 h-3"></i> Copy
                 </button>
               </div>
-              <p class="text-xs font-mono text-slate-200 break-all">https://github.com/example/p2p-hub</p>
-              <span class="block text-[10px] text-app-muted font-mono text-right mt-1">19:46</span>
+              <p class="text-xs font-mono text-slate-200 break-all select-all">https://github.com/example/p2p-hub</p>
+              <span class="block text-[9px] md:text-[10px] text-app-muted font-mono text-right mt-1">19:46</span>
             </div>
           </div>
         </div>
 
       </div>
 
-      <!-- ================= MINIMAL BOTTOM INPUT BAR ================= -->
-      <div class="p-3 sm:p-4 border-t border-app-border bg-app-sidebar/90 shrink-0">
+      <!-- ================= BOTTOM INPUT BARS (PC & MOBILE) ================= -->
+      
+      <!-- 1. DESKTOP INPUT BAR (>= md: Exact Original Layout) -->
+      <div class="hidden md:block p-3 md:p-4 border-t border-app-border bg-app-sidebar/90 shrink-0">
         
-        <!-- Attachment Menu Popover (Hidden by default) -->
-        <div id="attach-menu" class="hidden absolute bottom-16 left-4 sm:left-6 bg-app-card border border-app-border rounded-xl p-2 shadow-2xl space-y-1 z-20 text-xs font-medium w-48">
+        <!-- Desktop Attachment Menu Popover -->
+        <div id="attach-menu" class="hidden absolute bottom-16 left-6 bg-app-card border border-app-border rounded-xl p-2 shadow-2xl space-y-1 z-20 text-xs font-medium w-48">
           <button onclick="triggerFileInput('document')" class="w-full flex items-center space-x-2.5 px-3 py-2 rounded-lg hover:bg-app-sidebar text-slate-200 hover:text-white transition-colors">
             <i data-lucide="file-text" class="w-4 h-4 text-app-cyan"></i>
             <span>Document / File</span>
@@ -312,10 +435,49 @@
         </form>
       </div>
 
+      <!-- 2. MOBILE INPUT BAR (< md: WhatsApp / Telegram Mobile Phone Style, permanently docked) -->
+      <div class="block md:hidden p-2 pb-[max(0.65rem,env(safe-area-inset-bottom))] bg-app-sidebar/98 border-t border-app-border shrink-0 z-30 shadow-2xl">
+        <form onsubmit="handleSendMobile(event)" class="flex items-center space-x-2">
+          
+          <!-- WhatsApp / Telegram Pill Container -->
+          <div class="flex-1 flex items-center bg-app-card border border-app-border/80 focus-within:border-app-cyan/60 rounded-full px-2 py-1 transition-all shadow-inner">
+            
+            <!-- Attach button (toggles WhatsApp/Telegram style bottom grid sheet) -->
+            <button type="button" onclick="toggleMobileAttachSheet()" class="p-2 text-app-muted hover:text-app-cyan active:scale-95 transition-transform" title="Attach">
+              <i data-lucide="paperclip" class="w-4 h-4"></i>
+            </button>
+
+            <!-- Text Input Field -->
+            <input 
+              type="text" 
+              id="chat-input-mobile"
+              placeholder="Message..." 
+              autocomplete="off"
+              class="flex-1 bg-transparent border-none text-white text-xs px-2 py-1 outline-none placeholder:text-app-muted/60"
+            />
+
+            <!-- Paste Clipboard Button -->
+            <button type="button" onclick="pasteClipboard()" class="p-2 text-app-muted hover:text-app-cyan active:scale-95 transition-transform" title="Paste Clipboard">
+              <i data-lucide="clipboard-paste" class="w-4 h-4"></i>
+            </button>
+
+            <!-- Quick Camera Snap -->
+            <button type="button" onclick="snapPhoto()" class="p-2 text-app-muted hover:text-app-cyan active:scale-95 transition-transform" title="Camera">
+              <i data-lucide="camera" class="w-4 h-4"></i>
+            </button>
+          </div>
+
+          <!-- Telegram / WhatsApp Circular Send Action Button -->
+          <button type="submit" class="w-10 h-10 rounded-full bg-app-cyan hover:bg-app-cyanHover text-black flex items-center justify-center shrink-0 shadow-lg active:scale-90 transition-transform">
+            <i data-lucide="send" class="w-4 h-4 translate-x-0.5"></i>
+          </button>
+        </form>
+      </div>
+
     </main>
 
     <!-- ================= RIGHT SIDEBAR: PERSISTENT ENCRYPTED VAULT ================= -->
-    <aside id="vault-sidebar" class="w-80 sm:w-96 border-l border-app-border bg-app-sidebar flex flex-col transition-all duration-300 translate-x-full absolute right-0 top-0 bottom-0 z-30 shadow-2xl">
+    <aside id="vault-sidebar" class="w-full md:w-96 border-l border-app-border bg-app-sidebar flex flex-col transition-all duration-300 translate-x-full absolute right-0 top-0 bottom-0 z-40 shadow-2xl">
       
       <!-- Vault Header -->
       <div class="p-4 border-b border-app-border flex items-center justify-between">
@@ -323,8 +485,8 @@
           <i data-lucide="shield-check" class="w-4 h-4 text-app-cyan"></i>
           <h3 class="text-xs font-mono font-bold uppercase tracking-wider text-white">Encrypted Vault (SQLite)</h3>
         </div>
-        <button onclick="toggleVaultSidebar(false)" class="text-app-muted hover:text-white">
-          <i data-lucide="x" class="w-4 h-4"></i>
+        <button onclick="toggleVaultSidebar(false)" class="p-1 rounded-lg text-app-muted hover:text-white hover:bg-app-card">
+          <i data-lucide="x" class="w-5 h-5"></i>
         </button>
       </div>
 
@@ -379,22 +541,160 @@
 
   </div>
 
+  <!-- ================= MOBILE ATTACHMENT BOTTOM SHEET (Telegram / WhatsApp Style) ================= -->
+  <div id="mobile-attach-backdrop" onclick="toggleMobileAttachSheet(false)" class="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 hidden md:hidden"></div>
+  <div id="mobile-attach-sheet" class="fixed bottom-0 left-0 right-0 bg-app-sidebar border-t border-app-border rounded-t-3xl p-5 z-50 transform translate-y-full transition-transform duration-200 md:hidden">
+    <div class="w-12 h-1 bg-app-border rounded-full mx-auto mb-4"></div>
+    <h3 class="text-xs font-mono uppercase text-app-muted tracking-wider text-center mb-4">Send P2P Encrypted</h3>
+    
+    <div class="grid grid-cols-3 gap-4 text-center">
+      <!-- Document -->
+      <button onclick="triggerFileInput('document'); toggleMobileAttachSheet(false);" class="flex flex-col items-center group">
+        <div class="w-13 h-13 w-12 h-12 rounded-2xl bg-blue-500/15 border border-blue-500/30 text-blue-400 flex items-center justify-center mb-1.5 active:scale-95 transition-transform">
+          <i data-lucide="file-text" class="w-6 h-6"></i>
+        </div>
+        <span class="text-[11px] text-slate-200">Document</span>
+      </button>
+
+      <!-- Folder Zip -->
+      <button onclick="triggerFileInput('folder'); toggleMobileAttachSheet(false);" class="flex flex-col items-center group">
+        <div class="w-12 h-12 rounded-2xl bg-amber-500/15 border border-amber-500/30 text-amber-400 flex items-center justify-center mb-1.5 active:scale-95 transition-transform">
+          <i data-lucide="folder" class="w-6 h-6"></i>
+        </div>
+        <span class="text-[11px] text-slate-200">Folder Zip</span>
+      </button>
+
+      <!-- Photos & Videos -->
+      <button onclick="triggerFileInput('media'); toggleMobileAttachSheet(false);" class="flex flex-col items-center group">
+        <div class="w-12 h-12 rounded-2xl bg-purple-500/15 border border-purple-500/30 text-purple-400 flex items-center justify-center mb-1.5 active:scale-95 transition-transform">
+          <i data-lucide="image" class="w-6 h-6"></i>
+        </div>
+        <span class="text-[11px] text-slate-200">Gallery</span>
+      </button>
+
+      <!-- Camera Snap -->
+      <button onclick="snapPhoto(); toggleMobileAttachSheet(false);" class="flex flex-col items-center group">
+        <div class="w-12 h-12 rounded-2xl bg-pink-500/15 border border-pink-500/30 text-pink-400 flex items-center justify-center mb-1.5 active:scale-95 transition-transform">
+          <i data-lucide="camera" class="w-6 h-6"></i>
+        </div>
+        <span class="text-[11px] text-slate-200">Camera</span>
+      </button>
+
+      <!-- Screen Snippet -->
+      <button onclick="captureScreen(); toggleMobileAttachSheet(false);" class="flex flex-col items-center group">
+        <div class="w-12 h-12 rounded-2xl bg-cyan-500/15 border border-cyan-500/30 text-cyan-400 flex items-center justify-center mb-1.5 active:scale-95 transition-transform">
+          <i data-lucide="monitor-up" class="w-6 h-6"></i>
+        </div>
+        <span class="text-[11px] text-slate-200">Screen</span>
+      </button>
+
+      <!-- SQLite Vault -->
+      <button onclick="toggleVaultSidebar(true); toggleMobileAttachSheet(false);" class="flex flex-col items-center group">
+        <div class="w-12 h-12 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 flex items-center justify-center mb-1.5 active:scale-95 transition-transform">
+          <i data-lucide="lock" class="w-6 h-6"></i>
+        </div>
+        <span class="text-[11px] text-slate-200">Vault DB</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- ================= MOBILE ROOM / GROUP INFO SHEET (WhatsApp / Telegram Info Style) ================= -->
+  <div id="mobile-info-sheet" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex flex-col justify-end hidden md:hidden">
+    <div class="bg-app-sidebar border-t border-app-border rounded-t-3xl p-5 max-h-[85vh] overflow-y-auto space-y-4">
+      <div class="flex items-center justify-between pb-2 border-b border-app-border">
+        <div class="flex items-center space-x-2">
+          <i data-lucide="shield" class="w-4 h-4 text-app-cyan"></i>
+          <h3 class="text-sm font-semibold text-white">Room Details & Peers</h3>
+        </div>
+        <button onclick="toggleMobileRoomInfo(false)" class="p-1 text-app-muted hover:text-white">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- Room Passcode & Quick Actions -->
+      <div class="bg-app-card border border-app-border rounded-2xl p-3 flex items-center justify-between">
+        <div>
+          <span class="text-[10px] text-app-muted font-mono block">ROOM PASSCODE</span>
+          <span class="text-sm font-mono font-bold text-app-cyan">CYBER-7429</span>
+        </div>
+        <div class="flex items-center space-x-2">
+          <button onclick="copyToClipboard('CYBER-7429')" class="px-2.5 py-1 bg-app-sidebar border border-app-border rounded-lg text-xs text-white hover:border-app-cyan">Copy</button>
+          <button onclick="toggleMobileRoomInfo(false); toggleQRModal(true);" class="px-2.5 py-1 bg-app-cyan text-black font-semibold rounded-lg text-xs">QR</button>
+        </div>
+      </div>
+
+      <!-- Connected Devices List -->
+      <div>
+        <h4 class="text-xs font-mono uppercase text-app-muted mb-2">Connected Mesh Devices (3)</h4>
+        <div class="space-y-2">
+          
+          <div class="bg-app-card border border-app-cyan/30 rounded-xl p-2.5 flex items-center justify-between">
+            <div class="flex items-center space-x-2.5">
+              <div class="w-8 h-8 rounded-lg bg-app-cyanDim text-app-cyan flex items-center justify-center">
+                <i data-lucide="laptop" class="w-4 h-4"></i>
+              </div>
+              <div>
+                <span class="text-xs font-medium text-white block">Work PC (You)</span>
+                <span class="text-[10px] font-mono text-app-cyan">Local Device · Host</span>
+              </div>
+            </div>
+            <button onclick="editDeviceName()" class="text-app-muted hover:text-app-cyan text-xs">
+              <i data-lucide="edit-2" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+
+          <div class="bg-app-card border border-app-border rounded-xl p-2.5 flex items-center justify-between">
+            <div class="flex items-center space-x-2.5">
+              <div class="w-8 h-8 rounded-lg bg-emerald-500/10 text-app-green flex items-center justify-center">
+                <i data-lucide="smartphone" class="w-4 h-4"></i>
+              </div>
+              <div>
+                <span class="text-xs font-medium text-white block">Personal Phone</span>
+                <span class="text-[10px] font-mono text-app-green">P2P WebRTC Direct</span>
+              </div>
+            </div>
+            <span class="w-2 h-2 rounded-full bg-app-green mr-2"></span>
+          </div>
+
+          <div class="bg-app-card border border-app-border rounded-xl p-2.5 flex items-center justify-between">
+            <div class="flex items-center space-x-2.5">
+              <div class="w-8 h-8 rounded-lg bg-emerald-500/10 text-app-green flex items-center justify-center">
+                <i data-lucide="monitor" class="w-4 h-4"></i>
+              </div>
+              <div>
+                <span class="text-xs font-medium text-white block">Home MacBook</span>
+                <span class="text-[10px] font-mono text-app-green">P2P WebRTC Direct</span>
+              </div>
+            </div>
+            <span class="w-2 h-2 rounded-full bg-app-green mr-2"></span>
+          </div>
+
+        </div>
+      </div>
+
+      <button onclick="copyToClipboard(window.location.origin + '/#room=CYBER-7429')" class="w-full py-2.5 bg-app-card border border-app-cyan text-app-cyan hover:bg-app-cyan hover:text-black font-semibold text-xs rounded-xl transition-all flex items-center justify-center gap-2">
+        <i data-lucide="share-2" class="w-4 h-4"></i>
+        <span>Share Room Link</span>
+      </button>
+    </div>
+  </div>
+
   <!-- ================= PAIR DEVICE / QR CODE MODAL ================= -->
   <div id="qr-modal" class="fixed inset-0 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden">
-    <div class="bg-app-sidebar border border-app-border rounded-2xl max-w-sm w-full p-6 shadow-2xl relative">
+    <div class="bg-app-sidebar border border-app-border rounded-2xl max-w-sm w-full p-5 sm:p-6 shadow-2xl relative">
       
       <!-- Close -->
       <button onclick="toggleQRModal(false)" class="absolute top-4 right-4 text-app-muted hover:text-white">
         <i data-lucide="x" class="w-4 h-4"></i>
       </button>
 
-      <div class="text-center mb-5">
+      <div class="text-center mb-4 sm:mb-5">
         <h3 class="text-sm font-semibold text-white">Pair Another Device</h3>
         <p class="text-xs text-app-muted mt-0.5">Scan from mobile or share room code</p>
       </div>
 
       <!-- Minimal QR Graphic -->
-      <div class="bg-white p-3 rounded-xl mx-auto w-44 h-44 flex items-center justify-center mb-5 shadow-inner">
+      <div class="bg-white p-3 rounded-xl mx-auto w-40 h-40 sm:w-44 sm:h-44 flex items-center justify-center mb-4 sm:mb-5 shadow-inner">
         <svg viewBox="0 0 100 100" class="w-full h-full text-black">
           <rect width="100" height="100" fill="white" />
           <rect x="10" y="10" width="25" height="25" fill="black" />
@@ -454,12 +754,52 @@
       } else {
         sidebar.classList.add('translate-x-full');
       }
+      lucide.createIcons();
     }
 
     function toggleAttachMenu() {
       const menu = document.getElementById('attach-menu');
       menu.classList.toggle('hidden');
     }
+
+    function toggleMobileAttachSheet(force) {
+      const sheet = document.getElementById('mobile-attach-sheet');
+      const backdrop = document.getElementById('mobile-attach-backdrop');
+      const isHidden = typeof force === 'boolean' ? !force : sheet.classList.contains('translate-y-full');
+      
+      if (isHidden) {
+        sheet.classList.remove('translate-y-full');
+        backdrop.classList.remove('hidden');
+      } else {
+        sheet.classList.add('translate-y-full');
+        backdrop.classList.add('hidden');
+      }
+      lucide.createIcons();
+    }
+
+    function toggleMobileRoomInfo(show) {
+      const sheet = document.getElementById('mobile-info-sheet');
+      if (show) sheet.classList.remove('hidden');
+      else sheet.classList.add('hidden');
+      lucide.createIcons();
+    }
+
+    function toggleMobileMenu() {
+      const menu = document.getElementById('mobile-menu-dropdown');
+      menu.classList.toggle('hidden');
+      lucide.createIcons();
+    }
+
+    // Close mobile dropdown when clicking outside
+    document.addEventListener('click', (e) => {
+      const dropdown = document.getElementById('mobile-menu-dropdown');
+      const btn = document.getElementById('mobile-menu-btn');
+      if (dropdown && !dropdown.classList.contains('hidden')) {
+        if (!dropdown.contains(e.target) && !btn.contains(e.target)) {
+          dropdown.classList.add('hidden');
+        }
+      }
+    });
 
     function toggleQRModal(show) {
       const modal = document.getElementById('qr-modal');
@@ -487,17 +827,20 @@
     }
 
     function triggerFileInput(type) {
-      document.getElementById('attach-menu').classList.add('hidden');
+      const attachMenu = document.getElementById('attach-menu');
+      if (attachMenu) attachMenu.classList.add('hidden');
       showToast(`Selected ${type} transfer. Streaming via WebRTC DataChannel...`);
     }
 
     function snapPhoto() {
-      document.getElementById('attach-menu').classList.add('hidden');
+      const attachMenu = document.getElementById('attach-menu');
+      if (attachMenu) attachMenu.classList.add('hidden');
       showToast('📷 Camera snapped & sent to room');
     }
 
     function captureScreen() {
-      document.getElementById('attach-menu').classList.add('hidden');
+      const attachMenu = document.getElementById('attach-menu');
+      if (attachMenu) attachMenu.classList.add('hidden');
       showToast('🖥️ Screen snippet captured & sent');
     }
 
@@ -521,27 +864,46 @@
       showToast('File encrypted (AES-256) & stored in SQLite Vault');
     }
 
+    function appendMessage(val) {
+      const container = document.getElementById('chat-messages');
+      const now = new Date();
+      const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+      
+      const msgDiv = document.createElement('div');
+      msgDiv.className = 'flex items-start justify-end space-x-2 sm:space-x-2.5 ml-auto max-w-[90%] sm:max-w-xl';
+      msgDiv.innerHTML = `
+        <div class="flex flex-col items-end min-w-0">
+          <span class="text-[10px] sm:text-[11px] font-medium text-app-cyan mb-0.5 mr-1 hidden sm:block">Work PC (You)</span>
+          <div class="bg-app-cyanDim border border-app-cyan/40 rounded-2xl rounded-tr-sm px-3.5 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm text-white shadow-sm leading-relaxed">
+            ${val.replace(/</g, "&lt;").replace(/>/g, "&gt;")}
+            <span class="flex items-center justify-end gap-1 text-[9px] sm:text-[10px] text-slate-300/80 font-mono text-right mt-1">
+              ${timeStr}
+              <i data-lucide="check-check" class="w-3 h-3 text-app-cyan"></i>
+            </span>
+          </div>
+        </div>
+      `;
+      container.appendChild(msgDiv);
+      container.scrollTop = container.scrollHeight;
+      lucide.createIcons();
+    }
+
     function handleSend(e) {
       e.preventDefault();
       const input = document.getElementById('chat-input');
       const val = input.value.trim();
       if (!val) return;
-
-      const container = document.getElementById('chat-messages');
-      const msgDiv = document.createElement('div');
-      msgDiv.className = 'flex items-start justify-end space-x-2.5 ml-auto max-w-xl animate-fade-in';
-      msgDiv.innerHTML = `
-        <div class="flex flex-col items-end">
-          <span class="text-[11px] font-medium text-app-cyan mb-1 mr-1">Work PC (You)</span>
-          <div class="bg-app-cyanDim border border-app-cyan/40 rounded-2xl rounded-tr-sm px-4 py-2.5 text-sm text-white shadow-sm leading-relaxed">
-            ${val.replace(/</g, "&lt;").replace(/>/g, "&gt;")}
-            <span class="block text-[10px] text-app-muted font-mono text-right mt-1">Just now</span>
-          </div>
-        </div>
-      `;
-      container.appendChild(msgDiv);
+      appendMessage(val);
       input.value = '';
-      container.scrollTop = container.scrollHeight;
+    }
+
+    function handleSendMobile(e) {
+      e.preventDefault();
+      const input = document.getElementById('chat-input-mobile');
+      const val = input.value.trim();
+      if (!val) return;
+      appendMessage(val);
+      input.value = '';
     }
   </script>
 </body>
