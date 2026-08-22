@@ -584,6 +584,16 @@ if (mobileAttachBackdrop) {
   mobileAttachBackdrop.addEventListener('click', () => toggleMobileAttachSheet(false));
 }
 
+const btnCloseMobileAttach = document.getElementById('btn-close-mobile-attach');
+if (btnCloseMobileAttach) {
+  btnCloseMobileAttach.addEventListener('click', () => toggleMobileAttachSheet(false));
+}
+
+const btnCancelMobileAttach = document.getElementById('btn-cancel-mobile-attach');
+if (btnCancelMobileAttach) {
+  btnCancelMobileAttach.addEventListener('click', () => toggleMobileAttachSheet(false));
+}
+
 // Desktop Attachment Menu Buttons
 const btnAttachDoc = document.getElementById('btn-attach-doc');
 if (btnAttachDoc) {
@@ -662,6 +672,58 @@ if (btnMobileAttachVault) {
     refreshIcons();
   });
 }
+
+/* =========================================================================
+   PC Drag & Drop File Sharing
+   ========================================================================= */
+
+const dropOverlay = document.getElementById('drop-overlay');
+let dragCounter = 0;
+
+window.addEventListener('dragenter', (e) => {
+  e.preventDefault();
+  if (e.dataTransfer && e.dataTransfer.types && Array.from(e.dataTransfer.types).includes('Files')) {
+    dragCounter++;
+    if (dropOverlay) {
+      dropOverlay.classList.remove('hidden');
+      dropOverlay.classList.add('flex');
+    }
+  }
+});
+
+window.addEventListener('dragover', (e) => {
+  e.preventDefault();
+  if (e.dataTransfer) {
+    e.dataTransfer.dropEffect = 'copy';
+  }
+});
+
+window.addEventListener('dragleave', (e) => {
+  e.preventDefault();
+  dragCounter--;
+  if (dragCounter <= 0) {
+    dragCounter = 0;
+    if (dropOverlay) {
+      dropOverlay.classList.add('hidden');
+      dropOverlay.classList.remove('flex');
+    }
+  }
+});
+
+window.addEventListener('drop', (e) => {
+  e.preventDefault();
+  dragCounter = 0;
+  if (dropOverlay) {
+    dropOverlay.classList.add('hidden');
+    dropOverlay.classList.remove('flex');
+  }
+
+  if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+    const droppedFiles = Array.from(e.dataTransfer.files);
+    showToast(`Streaming ${droppedFiles.length} dropped file${droppedFiles.length > 1 ? 's' : ''} P2P...`);
+    droppedFiles.forEach(file => sendFile(file));
+  }
+});
 
 if (inputFile) {
   inputFile.addEventListener('change', (e) => {

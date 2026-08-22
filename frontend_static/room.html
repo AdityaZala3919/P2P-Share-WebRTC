@@ -315,37 +315,58 @@
     </aside>
   </div>
 
+  <!-- ================= DRAG & DROP OVERLAY (PC) ================= -->
+  <div id="drop-overlay" class="fixed inset-0 z-50 bg-black/85 backdrop-blur-md hidden flex flex-col items-center justify-center pointer-events-none border-4 border-dashed border-app-cyan m-4 rounded-3xl animate-fade-in transition-all">
+    <div class="w-20 h-20 rounded-3xl bg-app-cyanDim border border-app-cyan/50 flex items-center justify-center text-app-cyan mb-4 animate-bounce shadow-2xl shadow-cyan-950/60">
+      <i data-lucide="upload-cloud" class="w-10 h-10"></i>
+    </div>
+    <h2 class="text-xl font-bold text-white font-mono tracking-tight mb-1">Drop Files to Stream P2P</h2>
+    <p class="text-xs text-app-muted font-mono">Send single or multiple files directly to all connected peers</p>
+  </div>
+
   <!-- ================= MOBILE SHEETS ================= -->
-  <div id="mobile-attach-backdrop" class="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 hidden md:hidden"></div>
-  <div id="mobile-attach-sheet" class="fixed bottom-0 left-0 right-0 bg-app-sidebar border-t border-app-border rounded-t-3xl p-5 z-50 transform translate-y-full transition-transform duration-200 md:hidden">
-    <div class="w-12 h-1 bg-app-border rounded-full mx-auto mb-4"></div>
-    <h3 class="text-xs font-mono uppercase text-app-muted tracking-wider text-center mb-4">Send P2P Encrypted</h3>
-    <div class="grid grid-cols-3 gap-4 text-center">
-      <button id="btn-mobile-attach-doc" class="flex flex-col items-center group cursor-pointer">
-        <div class="w-12 h-12 rounded-2xl bg-blue-500/15 border border-blue-500/30 text-blue-400 flex items-center justify-center mb-1.5 active:scale-95 transition-transform"><i data-lucide="file-text" class="w-6 h-6"></i></div>
-        <span class="text-[11px] text-slate-200">Document</span>
-      </button>
-      <button id="btn-mobile-attach-folder" class="flex flex-col items-center group cursor-pointer">
-        <div class="w-12 h-12 rounded-2xl bg-amber-500/15 border border-amber-500/30 text-amber-400 flex items-center justify-center mb-1.5 active:scale-95 transition-transform"><i data-lucide="folder" class="w-6 h-6"></i></div>
-        <span class="text-[11px] text-slate-200">Folder Zip</span>
-      </button>
-      <button id="btn-mobile-attach-media" class="flex flex-col items-center group cursor-pointer">
-        <div class="w-12 h-12 rounded-2xl bg-purple-500/15 border border-purple-500/30 text-purple-400 flex items-center justify-center mb-1.5 active:scale-95 transition-transform"><i data-lucide="image" class="w-6 h-6"></i></div>
-        <span class="text-[11px] text-slate-200">Gallery</span>
-      </button>
-      <button id="btn-mobile-attach-camera" class="flex flex-col items-center group cursor-pointer">
-        <div class="w-12 h-12 rounded-2xl bg-pink-500/15 border border-pink-500/30 text-pink-400 flex items-center justify-center mb-1.5 active:scale-95 transition-transform"><i data-lucide="camera" class="w-6 h-6"></i></div>
-        <span class="text-[11px] text-slate-200">Camera</span>
-      </button>
-      <button id="btn-mobile-attach-screen" class="flex flex-col items-center group cursor-pointer">
-        <div class="w-12 h-12 rounded-2xl bg-cyan-500/15 border border-cyan-500/30 text-cyan-400 flex items-center justify-center mb-1.5 active:scale-95 transition-transform"><i data-lucide="monitor-up" class="w-6 h-6"></i></div>
-        <span class="text-[11px] text-slate-200">Screen</span>
-      </button>
-      <button id="btn-mobile-attach-vault" class="flex flex-col items-center group cursor-pointer">
-        <div class="w-12 h-12 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 flex items-center justify-center mb-1.5 active:scale-95 transition-transform"><i data-lucide="lock" class="w-6 h-6"></i></div>
-        <span class="text-[11px] text-slate-200">Vault DB</span>
+  <div id="mobile-attach-backdrop" class="fixed inset-0 bg-black/70 backdrop-blur-xs z-50 hidden md:hidden"></div>
+  <div id="mobile-attach-sheet" class="fixed bottom-0 left-0 right-0 bg-app-sidebar border-t border-app-border rounded-t-3xl p-5 z-50 transform translate-y-full transition-transform duration-200 md:hidden flex flex-col shadow-2xl">
+    <div class="flex items-center justify-between pb-3 border-b border-app-border/70 mb-4">
+      <div class="flex items-center gap-2">
+        <i data-lucide="paperclip" class="w-4 h-4 text-app-cyan"></i>
+        <h3 class="text-xs font-mono uppercase text-white tracking-wider font-semibold">Send P2P Encrypted</h3>
+      </div>
+      <button id="btn-close-mobile-attach" type="button" class="p-1 rounded-lg text-app-muted hover:text-white bg-app-card border border-app-border cursor-pointer">
+        <i data-lucide="x" class="w-4 h-4"></i>
       </button>
     </div>
+    
+    <div class="grid grid-cols-3 gap-3.5 text-center mb-4">
+      <button id="btn-mobile-attach-doc" type="button" class="flex flex-col items-center group cursor-pointer p-2 rounded-xl hover:bg-app-card transition-colors">
+        <div class="w-12 h-12 rounded-2xl bg-blue-500/15 border border-blue-500/30 text-blue-400 flex items-center justify-center mb-1.5 active:scale-95 transition-transform"><i data-lucide="file-text" class="w-6 h-6"></i></div>
+        <span class="text-[11px] text-slate-200 font-medium">Document</span>
+      </button>
+      <button id="btn-mobile-attach-folder" type="button" class="flex flex-col items-center group cursor-pointer p-2 rounded-xl hover:bg-app-card transition-colors">
+        <div class="w-12 h-12 rounded-2xl bg-amber-500/15 border border-amber-500/30 text-amber-400 flex items-center justify-center mb-1.5 active:scale-95 transition-transform"><i data-lucide="folder" class="w-6 h-6"></i></div>
+        <span class="text-[11px] text-slate-200 font-medium">Folder Zip</span>
+      </button>
+      <button id="btn-mobile-attach-media" type="button" class="flex flex-col items-center group cursor-pointer p-2 rounded-xl hover:bg-app-card transition-colors">
+        <div class="w-12 h-12 rounded-2xl bg-purple-500/15 border border-purple-500/30 text-purple-400 flex items-center justify-center mb-1.5 active:scale-95 transition-transform"><i data-lucide="image" class="w-6 h-6"></i></div>
+        <span class="text-[11px] text-slate-200 font-medium">Gallery</span>
+      </button>
+      <button id="btn-mobile-attach-camera" type="button" class="flex flex-col items-center group cursor-pointer p-2 rounded-xl hover:bg-app-card transition-colors">
+        <div class="w-12 h-12 rounded-2xl bg-pink-500/15 border border-pink-500/30 text-pink-400 flex items-center justify-center mb-1.5 active:scale-95 transition-transform"><i data-lucide="camera" class="w-6 h-6"></i></div>
+        <span class="text-[11px] text-slate-200 font-medium">Camera</span>
+      </button>
+      <button id="btn-mobile-attach-screen" type="button" class="flex flex-col items-center group cursor-pointer p-2 rounded-xl hover:bg-app-card transition-colors">
+        <div class="w-12 h-12 rounded-2xl bg-cyan-500/15 border border-cyan-500/30 text-cyan-400 flex items-center justify-center mb-1.5 active:scale-95 transition-transform"><i data-lucide="monitor-up" class="w-6 h-6"></i></div>
+        <span class="text-[11px] text-slate-200 font-medium">Screen</span>
+      </button>
+      <button id="btn-mobile-attach-vault" type="button" class="flex flex-col items-center group cursor-pointer p-2 rounded-xl hover:bg-app-card transition-colors">
+        <div class="w-12 h-12 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 flex items-center justify-center mb-1.5 active:scale-95 transition-transform"><i data-lucide="lock" class="w-6 h-6"></i></div>
+        <span class="text-[11px] text-slate-200 font-medium">Vault DB</span>
+      </button>
+    </div>
+
+    <button id="btn-cancel-mobile-attach" type="button" class="w-full py-2.5 bg-app-card border border-app-border rounded-xl text-xs font-medium text-app-muted hover:text-white transition-colors cursor-pointer">
+      Cancel
+    </button>
   </div>
 
   <div id="mobile-info-sheet" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex flex-col justify-end hidden md:hidden">
