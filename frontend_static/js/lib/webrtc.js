@@ -12,7 +12,8 @@ export function createPeerConnection(peerId, onSignal, onMessage, onStateChange)
     deviceInfo: { peer_id: peerId, device_name: "", device_type: "desktop" },
     pc,
     dataChannel: null,
-    isConnected: false
+    isConnected: false,
+    onMessage: onMessage
   };
 
   pc.onicecandidate = (event) => {
@@ -37,13 +38,16 @@ export function createPeerConnection(peerId, onSignal, onMessage, onStateChange)
 
 export function setupDataChannel(dc, peerId, onMessage) {
   dc.binaryType = "arraybuffer";
-  dc.onmessage = (event) => onMessage(event.data, peerId);
+  if (onMessage) {
+    dc.onmessage = (event) => onMessage(event.data, peerId);
+  }
 }
 
-export async function createOffer(conn, onSignal) {
+export async function createOffer(conn, onSignal, onMessage) {
   const dc = conn.pc.createDataChannel("ciphershare", { ordered: true });
   conn.dataChannel = dc;
-  setupDataChannel(dc, conn.peerId, () => {});
+  const msgHandler = onMessage || conn.onMessage;
+  setupDataChannel(dc, conn.peerId, msgHandler);
 
   const offer = await conn.pc.createOffer();
   await conn.pc.setLocalDescription(offer);

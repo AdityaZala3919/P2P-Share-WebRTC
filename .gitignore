@@ -2,15 +2,11 @@
 .venv/
 *.venv/
 __pycache__/
+**/__pycache__/
 *.pyc
+**/*.pyc
 *.pyo
-
-# SQLite databases
-*.db
-*.db-shm
-*.db-wal
-*.sqlite
-*.sqlite3
+**/*.pyo
 
 # Node modules & build artifacts
 node_modules/
@@ -21,4 +17,5 @@ dist/
 # OS files
 .DS_Store
 Thumbs.db
-*.log
+*.log
+HISTORY.md
