@@ -1,9 +1,11 @@
 /**
- * Landing page controller: Create & Join room orchestration.
+ * Landing page controller: Create & Join room orchestration + Live Camera QR Scanner.
  */
 import { showToast } from "./ui/toast.js";
 
 let mode = "create"; // "create" | "join"
+let scannerStream = null;
+let scannerAnimationId = null;
 
 const tabCreate = document.getElementById("tab-create");
 const tabJoin = document.getElementById("tab-join");
@@ -13,6 +15,14 @@ const inputPassphrase = document.getElementById("input-passphrase");
 const btnSubmit = document.getElementById("btn-submit");
 const btnSubmitText = document.getElementById("btn-submit-text");
 const landingForm = document.getElementById("landing-form");
+
+// QR Scanner Elements
+const btnScanQR = document.getElementById("btn-scan-qr");
+const qrScannerModal = document.getElementById("qr-scanner-modal");
+const btnCloseScanner = document.getElementById("btn-close-scanner");
+const qrVideo = document.getElementById("qr-video");
+const qrCanvas = document.getElementById("qr-canvas");
+const scannerLoading = document.getElementById("scanner-loading");
 
 function setMode(newMode) {
   mode = newMode;
@@ -35,23 +45,140 @@ function setMode(newMode) {
 tabCreate.addEventListener("click", () => setMode("create"));
 tabJoin.addEventListener("click", () => setMode("join"));
 
+// Enforce 5-character lowercase alphanumeric input
 inputRoomCode.addEventListener("input", (e) => {
-  e.target.value = e.target.value.toUpperCase();
+  e.target.value = e.target.value.toLowerCase().replace(/[^a-z0-9]/g, "").slice(0, 5);
 });
 
-// Check if URL has ?join=ROOM_CODE or #ROOM_CODE
+// Check if URL has ?join=room_code or #room_code
 const urlParams = new URLSearchParams(window.location.search);
 const joinParam = urlParams.get("join") || (window.location.hash ? window.location.hash.replace("#", "") : "");
 if (joinParam) {
   setMode("join");
-  inputRoomCode.value = joinParam.toUpperCase();
+  inputRoomCode.value = joinParam.toLowerCase().slice(0, 5);
   inputPassphrase.focus();
 }
+
+/* =========================================================================
+   Live Camera QR Scanner Implementation
+   ========================================================================= */
+
+function stopQRScanner() {
+  if (scannerAnimationId) {
+    cancelAnimationFrame(scannerAnimationId);
+    scannerAnimationId = null;
+  }
+  if (scannerStream) {
+    scannerStream.getTracks().forEach((track) => track.stop());
+    scannerStream = null;
+  }
+  if (qrVideo) {
+    qrVideo.srcObject = null;
+  }
+  qrScannerModal.classList.add("hidden");
+  qrScannerModal.classList.remove("flex");
+}
+
+async function startQRScanner() {
+  qrScannerModal.classList.remove("hidden");
+  qrScannerModal.classList.add("flex");
+  scannerLoading.classList.remove("hidden");
+
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: "environment", width: { ideal: 720 }, height: { ideal: 720 } }
+    });
+    scannerStream = stream;
+    qrVideo.srcObject = stream;
+    await qrVideo.play();
+    scannerLoading.classList.add("hidden");
+    requestAnimationFrame(scanQRCodeFrame);
+  } catch (err) {
+    console.error("Camera access error:", err);
+    scannerLoading.classList.add("hidden");
+    showToast("Camera access denied or unavailable");
+    stopQRScanner();
+  }
+}
+
+function scanQRCodeFrame() {
+  if (!scannerStream || qrVideo.readyState !== qrVideo.HAVE_ENOUGH_DATA) {
+    scannerAnimationId = requestAnimationFrame(scanQRCodeFrame);
+    return;
+  }
+
+  const canvas = qrCanvas;
+  const ctx = canvas.getContext("2d", { willReadFrequently: true });
+  canvas.width = qrVideo.videoWidth;
+  canvas.height = qrVideo.videoHeight;
+  ctx.drawImage(qrVideo, 0, 0, canvas.width, canvas.height);
+
+  const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  
+  if (window.jsQR) {
+    const code = window.jsQR(imageData.data, imageData.width, imageData.height, {
+      inversionAttempts: "dontInvert",
+    });
+
+    if (code && code.data) {
+      handleScannedQRCode(code.data);
+      return;
+    }
+  }
+
+  scannerAnimationId = requestAnimationFrame(scanQRCodeFrame);
+}
+
+function handleScannedQRCode(scannedText) {
+  stopQRScanner();
+  showToast("QR Code Scanned!");
+
+  try {
+    let parsedRoom = "";
+    let parsedPass = "";
+
+    // If scanned text is a full URL e.g. https://.../room/a2xa7#passphrase
+    if (scannedText.includes("/room/")) {
+      const match = scannedText.match(/\/room\/([a-zA-Z0-9]+)/);
+      if (match) parsedRoom = match[1].toLowerCase().slice(0, 5);
+
+      if (scannedText.includes("#")) {
+        parsedPass = decodeURIComponent(scannedText.split("#")[1] || "");
+      }
+    } else {
+      // Plain room code
+      parsedRoom = scannedText.trim().toLowerCase().slice(0, 5);
+    }
+
+    if (parsedRoom) {
+      setMode("join");
+      inputRoomCode.value = parsedRoom;
+      if (parsedPass) {
+        inputPassphrase.value = parsedPass;
+        // Auto-join room immediately
+        landingForm.requestSubmit();
+      } else {
+        inputPassphrase.focus();
+        showToast(`Room code ${parsedRoom} set. Enter passphrase.`);
+      }
+    }
+  } catch (err) {
+    console.error("QR parse error:", err);
+    showToast("Invalid QR Code payload");
+  }
+}
+
+if (btnScanQR) btnScanQR.addEventListener("click", startQRScanner);
+if (btnCloseScanner) btnCloseScanner.addEventListener("click", stopQRScanner);
+
+/* =========================================================================
+   Form Submission (Create & Join)
+   ========================================================================= */
 
 landingForm.addEventListener("submit", async (e) => {
   e.preventDefault();
   const passphrase = inputPassphrase.value.trim();
-  const roomCode = inputRoomCode.value.trim().toUpperCase();
+  const roomCode = inputRoomCode.value.trim().toLowerCase();
 
   if (!passphrase) {
     showToast("Please enter a passphrase");
@@ -107,4 +234,4 @@ landingForm.addEventListener("submit", async (e) => {
 // Render Lucide icons
 if (window.lucide) {
   window.lucide.createIcons();
-}
+}

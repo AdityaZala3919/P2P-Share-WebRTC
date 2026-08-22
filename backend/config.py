@@ -6,7 +6,7 @@ class Settings:
     STUN_URLS: list[str] = None
     CORS_ORIGINS: list[str] = None
     MAX_VAULT_FILE_SIZE: int = 10 * 1024 * 1024
-    ROOM_CODE_LENGTH: int = 8
+    ROOM_CODE_LENGTH: int = 5
 
     def __post_init__(self):
         if self.STUN_URLS is None:

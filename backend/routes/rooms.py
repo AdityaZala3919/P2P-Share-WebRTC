@@ -10,8 +10,8 @@ from signaling import registry
 
 router = APIRouter(prefix="/api/rooms")
 
-def generate_room_code(length: int = 8) -> str:
-    return "".join(random.choices(string.ascii_uppercase + string.digits, k=length))
+def generate_room_code(length: int = settings.ROOM_CODE_LENGTH) -> str:
+    return "".join(random.choices(string.ascii_lowercase + string.digits, k=length))
 
 @router.post("", include_in_schema=False)
 @router.post("/")
@@ -34,6 +34,7 @@ async def create_room(room_data: RoomCreate, db: aiosqlite.Connection = Depends(
 
 @router.post("/{room_id}/join")
 async def join_room(room_id: str, join_data: RoomJoinRequest, db: aiosqlite.Connection = Depends(get_db)):
+    room_id = room_id.lower().strip()
     cursor = await db.execute("SELECT passphrase_hash FROM rooms WHERE id = ?", (room_id,))
     row = await cursor.fetchone()
     

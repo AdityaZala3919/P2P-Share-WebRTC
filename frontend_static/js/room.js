@@ -29,7 +29,7 @@ function refreshIcons() {
 }
 
 const pathMatch = window.location.pathname.match(/\/room\/([^\/]+)/);
-const roomId = pathMatch ? pathMatch[1].toUpperCase() : null;
+const roomId = pathMatch ? pathMatch[1].toLowerCase() : null;
 
 if (!roomId) {
   window.location.href = '/';
@@ -182,23 +182,35 @@ function handleDataChannelMessage(data, fromPeerId) {
       }
       if (msg.type === 'file-complete') {
         const transfer = getTransfer(msg.id);
-        if (transfer) {
-          const blob = reassembleChunks(transfer.chunks, transfer.meta.totalChunks, transfer.meta.mimeType);
-          const url = URL.createObjectURL(blob);
-          transfer.status = 'complete';
-          transfer.bytesTransferred = transfer.meta.size;
-          transfer.blobUrl = url;
-          upsertTransfer(transfer);
-          playTransferComplete();
-          haptic([50, 50, 100]);
+        if (transfer && transfer.status !== 'complete') {
+          if (transfer.chunks.size >= transfer.meta.totalChunks) {
+            try {
+              const blob = reassembleChunks(transfer.chunks, transfer.meta.totalChunks, transfer.meta.mimeType);
+              const url = URL.createObjectURL(blob);
+              transfer.status = 'complete';
+              transfer.bytesTransferred = transfer.meta.size;
+              transfer.blobUrl = url;
+              upsertTransfer(transfer);
+              playTransferComplete();
+              haptic([50, 50, 100]);
+            } catch (err) {
+              console.error('Error reassembling file:', err);
+            }
+          }
         }
         return;
       }
-    } catch (e) {}
+    } catch (e) {
+      console.error('Error handling string DC message:', e);
+    }
   } else {
     try {
       const view = new DataView(data);
-      const headerLen = view.getUint32(0);
+      const headerLen = view.getUint32(0, true);
+      if (headerLen <= 0 || headerLen > data.byteLength - 4) {
+        console.error('Invalid binary chunk header length:', headerLen);
+        return;
+      }
       const headerBytes = new Uint8Array(data, 4, headerLen);
       const header = JSON.parse(new TextDecoder().decode(headerBytes));
       if (header.type === 'file-chunk') {
@@ -213,6 +225,22 @@ function handleDataChannelMessage(data, fromPeerId) {
           transfer.speed = speed;
           transfer.eta = speed > 0 ? (transfer.meta.size - bytes) / speed : 0;
           upsertTransfer(transfer);
+
+          // Auto-reassemble if all chunks are in
+          if (transfer.chunks.size >= transfer.meta.totalChunks && transfer.status !== 'complete') {
+            try {
+              const blob = reassembleChunks(transfer.chunks, transfer.meta.totalChunks, transfer.meta.mimeType);
+              const url = URL.createObjectURL(blob);
+              transfer.status = 'complete';
+              transfer.bytesTransferred = transfer.meta.size;
+              transfer.blobUrl = url;
+              upsertTransfer(transfer);
+              playTransferComplete();
+              haptic([50, 50, 100]);
+            } catch (err) {
+              console.error('Error reassembling completed chunks:', err);
+            }
+          }
         }
       }
     } catch (err) {
@@ -398,11 +426,20 @@ async function sendFile(file) {
   for await (const chunk of fileToChunks(file)) {
     const header = JSON.stringify({ type: 'file-chunk', id, index: chunk.index, total: chunk.total });
     const headerBytes = new TextEncoder().encode(header);
-    const headerLen = new Uint32Array([headerBytes.length]);
     const combined = new Uint8Array(4 + headerBytes.length + chunk.data.byteLength);
-    combined.set(new Uint8Array(headerLen.buffer), 0);
+    const view = new DataView(combined.buffer);
+    view.setUint32(0, headerBytes.length, true);
     combined.set(headerBytes, 4);
     combined.set(new Uint8Array(chunk.data), 4 + headerBytes.length);
+
+    // Flow control backpressure to avoid WebRTC buffer overflow
+    for (const conn of peerConnections.values()) {
+      if (conn.dataChannel && conn.dataChannel.readyState === 'open') {
+        while (conn.dataChannel.bufferedAmount > 512 * 1024) {
+          await new Promise(r => setTimeout(r, 10));
+        }
+      }
+    }
 
     sendToAll(combined.buffer);
 
@@ -416,6 +453,8 @@ async function sendFile(file) {
     upsertTransfer(transfer);
   }
 
+  // Small pause before sending complete signal so in-flight chunks land
+  await new Promise(r => setTimeout(r, 50));
   sendToAll(JSON.stringify({ type: 'file-complete', id }));
   transfer.status = 'complete';
   transfer.bytesTransferred = meta.size;
