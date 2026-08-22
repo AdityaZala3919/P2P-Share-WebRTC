@@ -13,9 +13,11 @@ node_modules/
 dist/
 .vite/
 .oxlintrc.json
+frontend/
 
 # OS files
 .DS_Store
 Thumbs.db
 *.log
 HISTORY.md
+frontend

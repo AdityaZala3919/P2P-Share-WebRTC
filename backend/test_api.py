@@ -9,12 +9,12 @@ async def test_api():
         assert res.status_code == 200, f"Health check failed: {res.text}"
         print("1. Health check: OK")
 
-        # 2. Create room
-        res = await client.post("/api/rooms/", json={"passphrase": "super-secret-key-123"})
+        # 2. Create room (test both without and with trailing slash)
+        res = await client.post("/api/rooms", json={"passphrase": "super-secret-key-123"})
         assert res.status_code == 200, f"Create room failed: {res.text}"
         data = res.json()
         room_id = data["room_id"]
-        print(f"2. Room created: {room_id} (created_at: {data['created_at']})")
+        print(f"2. Room created via /api/rooms: {room_id} (created_at: {data['created_at']})")
 
         # 3. Join room with correct passphrase
         res = await client.post(f"/api/rooms/{room_id}/join", json={"passphrase": "super-secret-key-123"})

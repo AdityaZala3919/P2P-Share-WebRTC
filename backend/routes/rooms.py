@@ -13,6 +13,7 @@ router = APIRouter(prefix="/api/rooms")
 def generate_room_code(length: int = 8) -> str:
     return "".join(random.choices(string.ascii_uppercase + string.digits, k=length))
 
+@router.post("", include_in_schema=False)
 @router.post("/")
 async def create_room(room_data: RoomCreate, db: aiosqlite.Connection = Depends(get_db)):
     room_id = generate_room_code(settings.ROOM_CODE_LENGTH)
