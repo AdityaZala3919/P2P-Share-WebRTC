@@ -131,32 +131,40 @@ function scanQRCodeFrame() {
 
 function handleScannedQRCode(scannedText) {
   stopQRScanner();
-  showToast("QR Code Scanned!");
 
   try {
     let parsedRoom = "";
     let parsedPass = "";
 
-    // If scanned text is a full URL e.g. https://.../room/a2xa7#passphrase
+    // Handle full URL or path e.g. https://.../room/a2xa7#myPass
     if (scannedText.includes("/room/")) {
-      const match = scannedText.match(/\/room\/([a-zA-Z0-9]+)/);
-      if (match) parsedRoom = match[1].toLowerCase().slice(0, 5);
-
-      if (scannedText.includes("#")) {
-        parsedPass = decodeURIComponent(scannedText.split("#")[1] || "");
+      const parts = scannedText.split("/room/");
+      const afterRoom = parts[1] || "";
+      
+      if (afterRoom.includes("#")) {
+        const [code, hash] = afterRoom.split("#");
+        parsedRoom = code.split("?")[0].trim().toLowerCase().slice(0, 5);
+        parsedPass = decodeURIComponent(hash.trim());
+      } else {
+        parsedRoom = afterRoom.split("?")[0].split("/")[0].trim().toLowerCase().slice(0, 5);
       }
+    } else if (scannedText.includes("#")) {
+      const [code, hash] = scannedText.split("#");
+      parsedRoom = code.trim().toLowerCase().slice(0, 5);
+      parsedPass = decodeURIComponent(hash.trim());
     } else {
-      // Plain room code
       parsedRoom = scannedText.trim().toLowerCase().slice(0, 5);
     }
 
     if (parsedRoom) {
       setMode("join");
       inputRoomCode.value = parsedRoom;
+
       if (parsedPass) {
         inputPassphrase.value = parsedPass;
-        // Auto-join room immediately
-        landingForm.requestSubmit();
+        sessionStorage.setItem(`ciphershare_pass_${parsedRoom}`, parsedPass);
+        showToast("QR Verified! Joining room...");
+        window.location.href = `/room/${parsedRoom}#${encodeURIComponent(parsedPass)}`;
       } else {
         inputPassphrase.focus();
         showToast(`Room code ${parsedRoom} set. Enter passphrase.`);

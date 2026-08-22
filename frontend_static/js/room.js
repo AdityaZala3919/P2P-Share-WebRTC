@@ -533,8 +533,8 @@ if (attachMenu) {
 // Mobile attachment sheet controller
 function toggleMobileAttachSheet(force) {
   if (!mobileAttachSheet || !mobileAttachBackdrop) return;
-  const isHidden = typeof force === 'boolean' ? !force : mobileAttachSheet.classList.contains('translate-y-full');
-  if (isHidden) {
+  const shouldOpen = typeof force === 'boolean' ? force : mobileAttachSheet.classList.contains('translate-y-full');
+  if (shouldOpen) {
     mobileAttachSheet.classList.remove('translate-y-full');
     mobileAttachBackdrop.classList.remove('hidden');
   } else {
@@ -553,8 +553,8 @@ function toggleMobileRoomInfo(show) {
 
 function toggleMobileMenu(force) {
   if (!mobileMenuDropdown) return;
-  const isHidden = typeof force === 'boolean' ? !force : mobileMenuDropdown.classList.contains('hidden');
-  if (isHidden) {
+  const shouldOpen = typeof force === 'boolean' ? force : mobileMenuDropdown.classList.contains('hidden');
+  if (shouldOpen) {
     mobileMenuDropdown.classList.remove('hidden');
   } else {
     mobileMenuDropdown.classList.add('hidden');
@@ -1453,7 +1453,10 @@ if (btnCloseVault) {
 }
 
 function getJoinUrl(includePass) {
-  const { passphrase } = getRoomState();
+  let { passphrase } = getRoomState();
+  if (!passphrase && roomId) {
+    passphrase = sessionStorage.getItem(`ciphershare_pass_${roomId}`);
+  }
   const base = `${window.location.origin}/room/${roomId}`;
   if (includePass && passphrase) {
     return `${base}#${encodeURIComponent(passphrase)}`;
@@ -1487,6 +1490,14 @@ if (btnCloseQrModal) {
   });
 }
 
+if (qrModal) {
+  qrModal.addEventListener('click', (e) => {
+    if (e.target === qrModal) {
+      qrModal.classList.add('hidden');
+    }
+  });
+}
+
 const toggleIncludePass = document.getElementById('toggle-include-pass');
 if (toggleIncludePass) {
   toggleIncludePass.addEventListener('change', () => {
@@ -1505,7 +1516,10 @@ if (btnCopyModalCode) {
 const btnCopyModalPass = document.getElementById('btn-copy-modal-pass');
 if (btnCopyModalPass) {
   btnCopyModalPass.addEventListener('click', () => {
-    const { passphrase } = getRoomState();
+    let { passphrase } = getRoomState();
+    if (!passphrase && roomId) {
+      passphrase = sessionStorage.getItem(`ciphershare_pass_${roomId}`);
+    }
     if (passphrase) {
       navigator.clipboard.writeText(passphrase);
       showToast('Passphrase copied to clipboard');
@@ -1517,7 +1531,10 @@ const btnTogglePassVisibility = document.getElementById('btn-toggle-pass-visibil
 if (btnTogglePassVisibility) {
   btnTogglePassVisibility.addEventListener('click', () => {
     showPassInModal = !showPassInModal;
-    const { passphrase } = getRoomState();
+    let { passphrase } = getRoomState();
+    if (!passphrase && roomId) {
+      passphrase = sessionStorage.getItem(`ciphershare_pass_${roomId}`);
+    }
     if (modalRoomPassphrase) {
       modalRoomPassphrase.textContent = showPassInModal && passphrase ? passphrase : '••••••••';
     }
@@ -1571,6 +1588,14 @@ if (btnMobileOpenInfo) {
 const btnCloseMobileInfo = document.getElementById('btn-close-mobile-info');
 if (btnCloseMobileInfo) {
   btnCloseMobileInfo.addEventListener('click', () => toggleMobileRoomInfo(false));
+}
+
+if (mobileInfoSheet) {
+  mobileInfoSheet.addEventListener('click', (e) => {
+    if (e.target === mobileInfoSheet) {
+      toggleMobileRoomInfo(false);
+    }
+  });
 }
 
 const btnMobileSheetCopyCode = document.getElementById('btn-mobile-sheet-copy-code');
