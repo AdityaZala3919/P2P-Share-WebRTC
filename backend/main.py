@@ -3,12 +3,19 @@ import argparse
 import uvicorn
 from app.core.config import settings
 
+if sys.platform == "win32" and hasattr(sys.stdout, "reconfigure"):
+    try:
+        sys.stdout.reconfigure(encoding="utf-8")
+        sys.stderr.reconfigure(encoding="utf-8")
+    except Exception:
+        pass
+
 def run(host: str = settings.HOST, port: int = settings.PORT, reload: bool = True):
     """Run the CipherShare FastAPI backend server."""
     print(f"\n=======================================================")
-    print(f"  🚀 Starting CipherShare Server")
-    print(f"  📡 URL: http://{host}:{port}")
-    print(f"  🔄 Auto-reload: {reload}")
+    print(f"  Starting CipherShare Server")
+    print(f"  URL: http://{host}:{port}")
+    print(f"  Auto-reload: {reload}")
     print(f"=======================================================\n", flush=True)
     uvicorn.run("app.app:app", host=host, port=port, reload=reload)
 

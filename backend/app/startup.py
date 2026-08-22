@@ -10,13 +10,14 @@ async def lifespan(app: FastAPI):
     Shutdown: Dispose async database engine.
     """
     # Startup phase
-    print("🚀 Initializing database tables...")
+    print("[INFO] Initializing database tables...", flush=True)
     await init_db()
-    print("✅ Database ready.")
+    print("[INFO] Database ready.", flush=True)
     
     yield
     
     # Shutdown phase
-    print("🛑 Disposing database engine...")
+    print("[INFO] Disposing database engine...", flush=True)
     await engine.dispose()
-    print("Application shutdown complete.")
+    print("[INFO] Application shutdown complete.", flush=True)
+
