@@ -6,33 +6,29 @@ CipherShare is an end-to-end encrypted, peer-to-peer file transfer and persisten
 
 ## 📋 Prerequisites
 
-- **Python**: `>= 3.13` (managed via `uv`)
-- **Package Manager**: [uv](https://github.com/astral-sh/uv) (fast Python package manager)
-- **Node.js**: 18.x or newer
+- **Python**: `>= 3.13`
+- **Package Manager**: `pip`
+- **Node.js**: 18.x or newer (only if modifying React frontend)
 - **Modern Browser**: Chrome, Edge, Firefox, Brave, Safari (supports WebRTC + Web Crypto API)
 
 ---
 
-## ⚡ Quick Start with `uv` (Fastest Way)
+## ⚡ Quick Start
 
-### 1. Sync Backend with `uv`
+### 1. Setup Virtual Environment & Install Dependencies
 ```bash
 cd "D:\AI & ML\Projects\P2P\backend"
-uv sync
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
 ```
 
-### 2. Build Frontend
-```bash
-cd "D:\AI & ML\Projects\P2P\frontend"
-npm run build
-```
-
-### 3. Start Backend Server
+### 2. Start Backend Server
 ```bash
 cd "D:\AI & ML\Projects\P2P\backend"
-uv run python main.py
+python main.py run
 ```
-*(Or `uv run uvicorn app.app:app --host 0.0.0.0 --port 8000 --reload`)*
+*(Or `uvicorn app.app:app --host 0.0.0.0 --port 8000 --reload`)*
 
 Open your browser at **[http://localhost:8000](http://localhost:8000)**.
 
@@ -45,7 +41,7 @@ FastAPI serves both the REST API, WebSocket signaling, and the built React SPA f
 
 ```bash
 cd "D:\AI & ML\Projects\P2P\backend"
-uv run python main.py
+python main.py run
 ```
 - **App URL**: `http://localhost:8000`
 
@@ -57,7 +53,7 @@ Run backend and frontend independently for live code editing.
 ```bash
 # Terminal 1: Backend
 cd "D:\AI & ML\Projects\P2P\backend"
-uv run python main.py --reload
+python main.py --reload
 
 # Terminal 2: Frontend (Vite Dev Server)
 cd "D:\AI & ML\Projects\P2P\frontend"
@@ -76,7 +72,7 @@ To share files directly between your PC, phone, or tablet over your local Wi-Fi:
 2. **Start the backend with host `0.0.0.0`**:
    ```bash
    cd "D:\AI & ML\Projects\P2P\backend"
-   uv run python main.py --host 0.0.0.0 --port 8000
+   python main.py --host 0.0.0.0 --port 8000
    ```
 3. **Open on your PC**:
    `http://localhost:8000` or `http://192.168.1.50:8000`
@@ -150,7 +146,7 @@ backend/
 
 | Action | Command |
 |---|---|
-| Run backend test suite | `cd backend && uv run python test_suite.py` |
-| Start backend server | `cd backend && uv run python main.py` |
+| Run backend test suite | `cd backend && python test_suite.py` |
+| Start backend server | `cd backend && python main.py run` |
 | Rebuild frontend bundle | `cd frontend && npm run build` |
 | Type check frontend | `cd frontend && npm run build` |
