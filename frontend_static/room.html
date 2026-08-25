@@ -70,7 +70,6 @@
         <p class="text-[11px] text-app-muted flex items-center gap-1.5 font-mono">
           <span id="mesh-status-dot" class="w-2 h-2 rounded-full bg-app-green inline-block"></span>
           <span id="mesh-status-text">1 Device Connected (Local)</span>
-          <span id="header-mode-badge" class="text-[10px] font-mono font-bold text-app-cyan transition-colors duration-300">· ⚡ P2P</span>
         </p>
       </div>
     </div>
@@ -222,25 +221,8 @@
       <input type="file" id="input-media" class="hidden" accept="image/*,video/*" multiple />
 
       <!-- 1. DESKTOP INPUT BAR -->
-      <div class="hidden md:block border-t border-app-border bg-app-sidebar/90 shrink-0 relative">
-        <!-- Mode Switch Bar -->
-        <div id="mode-switch-bar" class="flex items-center justify-between px-6 py-1.5 border-b border-app-border/60 transition-colors duration-300">
-          <div class="flex items-center gap-2 select-none">
-            <!-- P2P label -->
-            <span id="mode-label-p2p" class="text-[10px] font-mono font-bold uppercase tracking-wider text-app-cyan transition-colors duration-300">⚡ P2P</span>
-            <!-- Toggle pill -->
-            <button id="btn-mode-toggle" class="relative w-10 h-5 rounded-full border border-app-cyan/30 bg-app-cyanDim transition-all duration-300 cursor-pointer focus:outline-none" title="Switch transfer mode" aria-label="Toggle transfer mode">
-              <span id="mode-toggle-knob" class="absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-app-cyan transition-all duration-300" style="box-shadow: 0 0 6px #00FFFF;"></span>
-            </button>
-            <!-- Vault label -->
-            <span id="mode-label-vault" class="text-[10px] font-mono font-bold uppercase tracking-wider text-[#4A5568] transition-colors duration-300">💾 Vault</span>
-            <!-- Description -->
-            <span id="mode-description" class="hidden lg:inline text-[9px] font-mono text-app-muted ml-1 transition-colors duration-300">Direct browser-to-browser. Requires both peers online.</span>
-          </div>
-          <span id="mode-uploading-indicator" class="hidden text-[10px] font-mono text-app-cyan animate-pulse">Encrypting & uploading…</span>
-        </div>
-
-        <div id="attach-menu" class="hidden absolute bottom-20 left-6 bg-app-card border border-app-border rounded-xl p-2 shadow-2xl space-y-1 z-20 text-xs font-medium w-48 animate-fade-in">
+      <div class="hidden md:block p-3 md:p-4 border-t border-app-border bg-app-sidebar/90 shrink-0 relative">
+        <div id="attach-menu" class="hidden absolute bottom-16 left-6 bg-app-card border border-app-border rounded-xl p-2 shadow-2xl space-y-1 z-20 text-xs font-medium w-48 animate-fade-in">
           <button id="btn-attach-doc" class="w-full flex items-center space-x-2.5 px-3 py-2 rounded-lg hover:bg-app-sidebar text-slate-200 hover:text-white transition-colors cursor-pointer">
             <i data-lucide="file-text" class="w-4 h-4 text-app-cyan"></i>
             <span>Document / File</span>
@@ -263,7 +245,6 @@
           </button>
         </div>
 
-        <div class="p-3 md:p-4">
         <form id="chat-form" class="flex items-center space-x-2 max-w-5xl mx-auto">
           <button type="button" id="btn-attach-toggle" class="p-2.5 rounded-xl bg-app-card hover:bg-app-cardHover border border-app-border text-app-muted hover:text-app-cyan transition-colors cursor-pointer" title="Attach file or media">
             <i data-lucide="paperclip" class="w-4 h-4"></i>
@@ -276,8 +257,7 @@
             <i data-lucide="send" class="w-4 h-4"></i>
           </button>
         </form>
-        </div><!-- /p-3 padding wrapper -->
-      </div><!-- /desktop input bar -->
+      </div>
 
       <!-- 2. MOBILE INPUT BAR -->
       <div class="block md:hidden p-2 pb-[max(0.65rem,env(safe-area-inset-bottom))] bg-app-sidebar/98 border-t border-app-border shrink-0 z-30 shadow-2xl">
