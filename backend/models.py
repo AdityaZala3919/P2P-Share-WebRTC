@@ -48,3 +48,15 @@ class DeviceInfo(BaseModel):
     peer_id: str
     device_name: str
     device_type: str
+
+class VaultFileMetadata(BaseModel):
+    id: str
+    room_id: str
+    file_name: str
+    file_size: int
+    iv: str
+    salt: str
+    created_at: str
+
+class VaultFileDeleteResponse(BaseModel):
+    deleted: bool

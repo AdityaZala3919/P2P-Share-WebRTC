@@ -8,7 +8,7 @@ import { fileToChunks, createTransferMeta, reassembleChunks, downloadBlob, CHUNK
 import { folderToZipFile } from './lib/folder-zip.js';
 import { detectDeviceType, getDeviceName, setDeviceName, getOrCreatePeerId } from './lib/device-detect.js';
 import { playConnected, playMessage, playTransferComplete, playChime, playError, haptic } from './lib/audio.js';
-import { setRoom, setMyDeviceName, addPeer, removePeer, clearRoom, getRoomState, subscribeRoom } from './store/room-store.js';
+import { setRoom, setMyDeviceName, addPeer, removePeer, clearRoom, getRoomState, subscribeRoom, setTransferMode } from './store/room-store.js';
 import { addMessage, addSystemMessage, upsertTransfer, getTransfer, clearMessages, getChatState, subscribeChat } from './store/chat-store.js';
 import { showToast } from './ui/toast.js';
 import { renderQR } from './ui/qr.js';
@@ -1422,6 +1422,7 @@ function toggleVault(force) {
   if (vaultOpen) {
     if (vaultSidebar) vaultSidebar.classList.remove('translate-x-full');
     fetchVaultItems();
+    fetchStagedFiles();
   } else {
     if (vaultSidebar) vaultSidebar.classList.add('translate-x-full');
   }
@@ -1451,6 +1452,324 @@ const btnCloseVault = document.getElementById('btn-close-vault');
 if (btnCloseVault) {
   btnCloseVault.addEventListener('click', () => toggleVault(false));
 }
+
+// ============================================================
+// MODE SWITCH: P2P Direct Stream  ⟷  Encrypted Server Vault
+// ============================================================
+
+const modeTheme = {
+  p2p: {
+    accent: '#00FFFF',
+    accentBg: 'rgba(0,255,255,0.08)',
+    accentBorder: 'rgba(0,255,255,0.25)',
+    glow: '0 0 15px rgba(0,255,255,0.15)',
+    label: '⚡ P2P',
+    description: 'Direct browser-to-browser. Requires both peers online.',
+    mutedLabel: '#4A5568',
+    inputPlaceholder: 'Type a message or paste a link...',
+  },
+  vault: {
+    accent: '#FF9F1C',
+    accentBg: 'rgba(255,159,28,0.08)',
+    accentBorder: 'rgba(255,159,28,0.25)',
+    glow: '0 0 15px rgba(255,159,28,0.15)',
+    label: '💾 VAULT',
+    description: 'Encrypted & staged on server. Receive anytime, offline-safe.',
+    mutedLabel: '#4A5568',
+    inputPlaceholder: 'Type a message... (attach files go to Encrypted Vault)',
+  },
+};
+
+function applyModeTheme(mode) {
+  const t = modeTheme[mode];
+  const isVault = mode === 'vault';
+
+  // Toggle knob position & colors
+  const knob = document.getElementById('mode-toggle-knob');
+  const toggle = document.getElementById('btn-mode-toggle');
+  const labelP2p = document.getElementById('mode-label-p2p');
+  const labelVault = document.getElementById('mode-label-vault');
+  const desc = document.getElementById('mode-description');
+  const uploadIndicator = document.getElementById('mode-uploading-indicator');
+  const headerBadge = document.getElementById('header-mode-badge');
+  const chatInputEl = document.getElementById('chat-input');
+
+  if (knob) {
+    knob.style.left = isVault ? '1.25rem' : '0.125rem';
+    knob.style.backgroundColor = t.accent;
+    knob.style.boxShadow = `0 0 6px ${t.accent}`;
+  }
+  if (toggle) {
+    toggle.style.backgroundColor = t.accentBg;
+    toggle.style.borderColor = t.accentBorder;
+    toggle.style.boxShadow = t.glow;
+  }
+  if (labelP2p) {
+    labelP2p.style.color = !isVault ? modeTheme.p2p.accent : modeTheme.p2p.mutedLabel;
+  }
+  if (labelVault) {
+    labelVault.style.color = isVault ? modeTheme.vault.accent : modeTheme.vault.mutedLabel;
+  }
+  if (desc) {
+    desc.textContent = t.description;
+    desc.style.color = t.accentBorder;
+  }
+  if (uploadIndicator) {
+    uploadIndicator.style.color = t.accent;
+  }
+  if (headerBadge) {
+    headerBadge.textContent = `· ${t.label}`;
+    headerBadge.style.color = t.accent;
+  }
+  if (chatInputEl) {
+    chatInputEl.placeholder = t.inputPlaceholder;
+    chatInputEl.style.borderColor = t.accentBorder;
+  }
+
+  // Send button color
+  const sendBtn = document.getElementById('btn-send-msg');
+  if (sendBtn) {
+    sendBtn.style.backgroundColor = t.accent;
+    sendBtn.style.setProperty('--hover-bg', isVault ? '#FFB347' : '#33FFFF');
+  }
+}
+
+const btnModeToggle = document.getElementById('btn-mode-toggle');
+if (btnModeToggle) {
+  btnModeToggle.addEventListener('click', () => {
+    const { transferMode } = getRoomState();
+    const next = transferMode === 'p2p' ? 'vault' : 'p2p';
+    setTransferMode(next);
+    applyModeTheme(next);
+    showToast(next === 'vault' ? '💾 Vault Staging mode active' : '⚡ P2P Stream mode active');
+  });
+}
+
+// Initialize theme on load
+applyModeTheme('p2p');
+
+// ============================================================
+// STAGED FILES: vault_files API (disk-backed, ≤50 MB)
+// ============================================================
+
+let stagedFiles = [];
+
+async function fetchStagedFiles() {
+  const { passphrase } = getRoomState();
+  if (!roomId || !passphrase) return;
+  try {
+    const res = await fetch(`/api/rooms/${roomId}/files`);
+    if (res.ok) {
+      stagedFiles = await res.json();
+      renderStagedFiles();
+      // Update vault badge
+      const total = stagedFiles.length;
+      if (vaultBadgeDot) {
+        if (total > 0 || (vaultItems && vaultItems.length > 0)) vaultBadgeDot.classList.remove('hidden');
+        else vaultBadgeDot.classList.add('hidden');
+      }
+    }
+  } catch (err) {
+    console.error('Staged files fetch error:', err);
+  }
+}
+
+function formatBytes(bytes) {
+  if (!bytes) return '0 B';
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function renderStagedFiles() {
+  const section = document.getElementById('staged-files-section');
+  const container = document.getElementById('staged-files-container');
+  const heading = document.getElementById('staged-files-heading');
+  if (!section || !container) return;
+
+  if (stagedFiles.length === 0) {
+    section.classList.add('hidden');
+    return;
+  }
+
+  section.classList.remove('hidden');
+  if (heading) heading.textContent = `Staged Files (${stagedFiles.length})`;
+  container.innerHTML = '';
+
+  for (const sf of stagedFiles) {
+    const card = document.createElement('div');
+    card.className = 'p-3 rounded-xl bg-app-card border transition-colors animate-fade-in';
+    card.style.borderColor = 'rgba(255,159,28,0.2)';
+    card.innerHTML = `
+      <div class="flex items-start justify-between gap-2 mb-2">
+        <div class="min-w-0 flex-1">
+          <p class="text-xs font-semibold text-white truncate">${escapeHtml(sf.file_name)}</p>
+          <p class="text-[10px] text-app-muted font-mono mt-0.5">${formatBytes(sf.file_size)} · ${new Date(sf.created_at).toLocaleString()}</p>
+        </div>
+        <span class="text-[9px] font-mono px-1.5 py-0.5 rounded-md shrink-0" style="color:#FF9F1C;background:rgba(255,159,28,0.1);border:1px solid rgba(255,159,28,0.2);">💾 STAGED</span>
+      </div>
+      <div class="flex gap-2">
+        <button onclick="window.__downloadStagedFile('${sf.id}')" class="flex-1 py-1.5 text-[10px] font-bold rounded-lg border cursor-pointer transition-all" style="color:#FF9F1C;border-color:rgba(255,159,28,0.3);background:rgba(255,159,28,0.05);">⬇ Download</button>
+        <button onclick="window.__deleteStagedFile('${sf.id}')" class="flex-1 py-1.5 text-[10px] font-bold rounded-lg border border-app-border bg-app-sidebar text-app-muted hover:text-red-400 hover:border-red-400/40 cursor-pointer transition-all">🗑 Delete</button>
+      </div>
+    `;
+    container.appendChild(card);
+  }
+  refreshIcons();
+}
+
+window.__downloadStagedFile = async (fileId) => {
+  const sf = stagedFiles.find(f => f.id === fileId);
+  const { passphrase } = getRoomState();
+  if (!sf || !passphrase) return;
+
+  try {
+    showToast('Downloading & decrypting...');
+    const res = await fetch(`/api/rooms/${roomId}/files/${fileId}/download`);
+    if (!res.ok) throw new Error('Download failed');
+
+    const encBuffer = await res.arrayBuffer();
+
+    // Convert raw binary ArrayBuffer → base64 for decryptBinary
+    const bytes = new Uint8Array(encBuffer);
+    let binary = '';
+    for (let i = 0; i < bytes.byteLength; i++) binary += String.fromCharCode(bytes[i]);
+    const ciphertext = btoa(binary);
+
+    const decrypted = await decryptBinary(ciphertext, sf.iv, sf.salt, passphrase);
+    const blob = new Blob([decrypted]);
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = sf.file_name;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 3000);
+    showToast(`Decrypted "${sf.file_name}" — downloading`);
+  } catch (err) {
+    showToast('Decryption failed (wrong passphrase?)');
+    console.error(err);
+  }
+};
+
+window.__deleteStagedFile = async (fileId) => {
+  if (!confirm('Delete this staged file?')) return;
+  try {
+    await fetch(`/api/rooms/${roomId}/files/${fileId}`, { method: 'DELETE' });
+    showToast('Staged file deleted');
+    await fetchStagedFiles();
+  } catch {
+    showToast('Failed to delete staged file');
+  }
+};
+
+// Hook staged files into vault file upload button (overwrites old 10MB inline logic)
+const inputVaultFileNew = document.getElementById('input-vault-file');
+const btnAddVaultFileNew = document.getElementById('btn-add-vault-file');
+
+if (btnAddVaultFileNew && inputVaultFileNew) {
+  btnAddVaultFileNew.addEventListener('click', () => inputVaultFileNew.click());
+
+  inputVaultFileNew.addEventListener('change', async (e) => {
+    const file = e.target.files?.[0];
+    const { passphrase } = getRoomState();
+    if (!file || !passphrase) return;
+
+    if (file.size > 50 * 1024 * 1024) {
+      showToast('File exceeds 50 MB vault staging limit');
+      e.target.value = '';
+      return;
+    }
+
+    const uploadIndicator = document.getElementById('mode-uploading-indicator');
+    if (uploadIndicator) uploadIndicator.classList.remove('hidden');
+
+    try {
+      showToast(`Encrypting "${file.name}"...`);
+      const buffer = await file.arrayBuffer();
+      const { ciphertext, iv, salt } = await encryptBinary(buffer, passphrase);
+
+      // Convert base64 ciphertext → binary Blob for multipart upload
+      const binStr = atob(ciphertext);
+      const bytes = new Uint8Array(binStr.length);
+      for (let i = 0; i < binStr.length; i++) bytes[i] = binStr.charCodeAt(i);
+      const encBlob = new Blob([bytes], { type: 'application/octet-stream' });
+
+      const formData = new FormData();
+      formData.append('file', encBlob, `${file.name}.enc`);
+      formData.append('iv', iv);
+      formData.append('salt', salt);
+      formData.append('original_file_name', file.name);
+      formData.append('original_file_size', String(file.size));
+
+      const res = await fetch(`/api/rooms/${roomId}/files`, { method: 'POST', body: formData });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ detail: 'Upload failed' }));
+        throw new Error(err.detail || 'Upload failed');
+      }
+      showToast(`"${file.name}" encrypted & staged in vault`);
+      await fetchStagedFiles();
+    } catch (err) {
+      showToast(err.message || 'Failed to stage file');
+    } finally {
+      if (uploadIndicator) uploadIndicator.classList.add('hidden');
+      e.target.value = '';
+    }
+  });
+}
+
+// ============================================================
+// DELETE ROOM
+// ============================================================
+
+const deleteRoomModal = document.getElementById('delete-room-modal');
+const btnDeleteRoom = document.getElementById('btn-delete-room');
+const btnDeleteRoomCancel = document.getElementById('btn-delete-room-cancel');
+const btnDeleteRoomConfirm = document.getElementById('btn-delete-room-confirm');
+
+if (btnDeleteRoom) {
+  btnDeleteRoom.addEventListener('click', () => {
+    if (deleteRoomModal) deleteRoomModal.classList.remove('hidden');
+    refreshIcons();
+  });
+}
+if (btnDeleteRoomCancel) {
+  btnDeleteRoomCancel.addEventListener('click', () => {
+    if (deleteRoomModal) deleteRoomModal.classList.add('hidden');
+  });
+}
+if (btnDeleteRoomConfirm) {
+  btnDeleteRoomConfirm.addEventListener('click', async () => {
+    const { passphrase } = getRoomState();
+    if (!passphrase) { showToast('No passphrase available'); return; }
+
+    btnDeleteRoomConfirm.textContent = 'Deleting...';
+    btnDeleteRoomConfirm.disabled = true;
+
+    try {
+      const res = await fetch(`/api/rooms/${roomId}`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ passphrase }),
+      });
+      if (res.ok) {
+        showToast('Room deleted');
+        setTimeout(() => { window.location.href = '/'; }, 800);
+      } else {
+        const err = await res.json().catch(() => ({ detail: 'Delete failed' }));
+        showToast(err.detail || 'Failed to delete room');
+        btnDeleteRoomConfirm.textContent = 'Delete Room';
+        btnDeleteRoomConfirm.disabled = false;
+      }
+    } catch {
+      showToast('Connection error');
+      btnDeleteRoomConfirm.textContent = 'Delete Room';
+      btnDeleteRoomConfirm.disabled = false;
+    }
+  });
+}
+
+// Refresh staged files whenever vault is opened
+const _origToggleVault = toggleVault;
 
 function getJoinUrl(includePass) {
   let { passphrase } = getRoomState();

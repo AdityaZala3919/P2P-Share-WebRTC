@@ -7,6 +7,7 @@ let state = {
   myPeerId: null,
   myDeviceName: "",
   peers: [],
+  transferMode: 'p2p', // 'p2p' | 'vault'
 };
 
 const listeners = new Set();
@@ -56,7 +57,13 @@ export function clearRoom() {
     myPeerId: null,
     myDeviceName: "",
     peers: [],
+    transferMode: 'p2p',
   };
+  notify();
+}
+
+export function setTransferMode(mode) {
+  state.transferMode = mode;
   notify();
 }
 

@@ -1,4 +1,5 @@
 from fastapi import APIRouter, HTTPException, Depends
+import os
 import bcrypt
 import random
 import string
@@ -60,3 +61,32 @@ async def get_peers(room_id: str):
 @router.get("/{room_id}/config")
 async def get_config(room_id: str):
     return {"iceServers": [{"urls": settings.STUN_URLS}]}
+
+@router.delete("/{room_id}")
+async def delete_room(room_id: str, join_data: RoomJoinRequest, db: aiosqlite.Connection = Depends(get_db)):
+    """
+    Permanently delete a room. Verifies passphrase, purges all staged encrypted
+    files from disk, and cascades-deletes all SQLite records (vault_items, vault_files).
+    """
+    import shutil
+
+    room_id = room_id.lower().strip()
+    cursor = await db.execute("SELECT passphrase_hash FROM rooms WHERE id = ?", (room_id,))
+    row = await cursor.fetchone()
+    if not row:
+        raise HTTPException(status_code=404, detail="Room not found")
+
+    hashed_passphrase = row["passphrase_hash"].encode('utf-8')
+    if not bcrypt.checkpw(join_data.passphrase.encode(), hashed_passphrase):
+        raise HTTPException(status_code=401, detail="Invalid passphrase")
+
+    # Purge all encrypted staging files for this room from disk
+    room_upload_dir = os.path.join(settings.UPLOADS_DIR, room_id)
+    if os.path.exists(room_upload_dir):
+        shutil.rmtree(room_upload_dir)
+
+    # Delete room row — CASCADE deletes vault_items and vault_files metadata
+    await db.execute("DELETE FROM rooms WHERE id = ?", (room_id,))
+    await db.commit()
+
+    return {"deleted": True, "room_id": room_id}

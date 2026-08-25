@@ -21,3 +21,8 @@ Thumbs.db
 *.log
 HISTORY.md
 frontend
+
+docs
+
+# Encrypted staging files (server-side vault, ≤50MB per file)
+backend/uploads/

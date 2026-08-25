@@ -5,7 +5,8 @@ class Settings:
     DATABASE_URL: str = "./ciphershare.db"
     STUN_URLS: list[str] = None
     CORS_ORIGINS: list[str] = None
-    MAX_VAULT_FILE_SIZE: int = 10 * 1024 * 1024
+    MAX_VAULT_FILE_SIZE: int = 50 * 1024 * 1024  # 50 MB
+    UPLOADS_DIR: str = "./uploads"               # Encrypted binary staging folder
     ROOM_CODE_LENGTH: int = 5
 
     def __post_init__(self):

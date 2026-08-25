@@ -54,10 +54,10 @@
   <!-- ================= TOP APP HEADER ================= -->
   
   <!-- 1. DESKTOP / PC HEADER -->
-  <header class="hidden md:flex h-14 border-b border-app-border bg-app-sidebar/80 backdrop-blur-md px-6 items-center justify-between z-30 shrink-0">
+  <header class="hidden md:flex h-14 border-b border-app-border bg-app-sidebar/80 backdrop-blur-md px-6 items-center justify-between z-30 shrink-0" id="desktop-header">
     
     <div class="flex items-center space-x-3">
-      <div class="w-8 h-8 rounded-lg bg-app-cyanDim border border-app-cyan/30 flex items-center justify-center text-app-cyan shrink-0">
+      <div class="w-8 h-8 rounded-lg bg-app-cyanDim border border-app-cyan/30 flex items-center justify-center text-app-cyan shrink-0" id="header-icon">
         <i data-lucide="shield" class="w-4 h-4"></i>
       </div>
       <div>
@@ -70,6 +70,7 @@
         <p class="text-[11px] text-app-muted flex items-center gap-1.5 font-mono">
           <span id="mesh-status-dot" class="w-2 h-2 rounded-full bg-app-green inline-block"></span>
           <span id="mesh-status-text">1 Device Connected (Local)</span>
+          <span id="header-mode-badge" class="text-[10px] font-mono font-bold text-app-cyan transition-colors duration-300">· ⚡ P2P</span>
         </p>
       </div>
     </div>
@@ -81,7 +82,7 @@
         <span id="vault-badge-dot" class="w-1.5 h-1.5 rounded-full bg-app-cyan"></span>
       </button>
 
-      <button id="btn-open-pair" class="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-app-cyan text-black hover:bg-app-cyanHover transition-all shadow-sm cursor-pointer">
+      <button id="btn-open-pair" class="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-app-cyan text-black hover:bg-app-cyanHover transition-all shadow-sm cursor-pointer" id-mode-pair>
         <i data-lucide="qr-code" class="w-3.5 h-3.5"></i>
         <span>Pair Device</span>
       </button>
@@ -93,6 +94,11 @@
           <i data-lucide="edit-2" class="w-3 h-3"></i>
         </button>
       </div>
+
+      <!-- Delete Room Button -->
+      <button id="btn-delete-room" class="w-8 h-8 rounded-lg bg-app-card border border-app-border hover:border-red-500/50 hover:bg-red-500/10 text-app-muted hover:text-red-400 flex items-center justify-center transition-all cursor-pointer" title="Delete room permanently">
+        <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+      </button>
     </div>
   </header>
 
@@ -216,8 +222,25 @@
       <input type="file" id="input-media" class="hidden" accept="image/*,video/*" multiple />
 
       <!-- 1. DESKTOP INPUT BAR -->
-      <div class="hidden md:block p-3 md:p-4 border-t border-app-border bg-app-sidebar/90 shrink-0 relative">
-        <div id="attach-menu" class="hidden absolute bottom-16 left-6 bg-app-card border border-app-border rounded-xl p-2 shadow-2xl space-y-1 z-20 text-xs font-medium w-48 animate-fade-in">
+      <div class="hidden md:block border-t border-app-border bg-app-sidebar/90 shrink-0 relative">
+        <!-- Mode Switch Bar -->
+        <div id="mode-switch-bar" class="flex items-center justify-between px-6 py-1.5 border-b border-app-border/60 transition-colors duration-300">
+          <div class="flex items-center gap-2 select-none">
+            <!-- P2P label -->
+            <span id="mode-label-p2p" class="text-[10px] font-mono font-bold uppercase tracking-wider text-app-cyan transition-colors duration-300">⚡ P2P</span>
+            <!-- Toggle pill -->
+            <button id="btn-mode-toggle" class="relative w-10 h-5 rounded-full border border-app-cyan/30 bg-app-cyanDim transition-all duration-300 cursor-pointer focus:outline-none" title="Switch transfer mode" aria-label="Toggle transfer mode">
+              <span id="mode-toggle-knob" class="absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-app-cyan transition-all duration-300" style="box-shadow: 0 0 6px #00FFFF;"></span>
+            </button>
+            <!-- Vault label -->
+            <span id="mode-label-vault" class="text-[10px] font-mono font-bold uppercase tracking-wider text-[#4A5568] transition-colors duration-300">💾 Vault</span>
+            <!-- Description -->
+            <span id="mode-description" class="hidden lg:inline text-[9px] font-mono text-app-muted ml-1 transition-colors duration-300">Direct browser-to-browser. Requires both peers online.</span>
+          </div>
+          <span id="mode-uploading-indicator" class="hidden text-[10px] font-mono text-app-cyan animate-pulse">Encrypting & uploading…</span>
+        </div>
+
+        <div id="attach-menu" class="hidden absolute bottom-20 left-6 bg-app-card border border-app-border rounded-xl p-2 shadow-2xl space-y-1 z-20 text-xs font-medium w-48 animate-fade-in">
           <button id="btn-attach-doc" class="w-full flex items-center space-x-2.5 px-3 py-2 rounded-lg hover:bg-app-sidebar text-slate-200 hover:text-white transition-colors cursor-pointer">
             <i data-lucide="file-text" class="w-4 h-4 text-app-cyan"></i>
             <span>Document / File</span>
@@ -240,6 +263,7 @@
           </button>
         </div>
 
+        <div class="p-3 md:p-4">
         <form id="chat-form" class="flex items-center space-x-2 max-w-5xl mx-auto">
           <button type="button" id="btn-attach-toggle" class="p-2.5 rounded-xl bg-app-card hover:bg-app-cardHover border border-app-border text-app-muted hover:text-app-cyan transition-colors cursor-pointer" title="Attach file or media">
             <i data-lucide="paperclip" class="w-4 h-4"></i>
@@ -252,7 +276,8 @@
             <i data-lucide="send" class="w-4 h-4"></i>
           </button>
         </form>
-      </div>
+        </div><!-- /p-3 padding wrapper -->
+      </div><!-- /desktop input bar -->
 
       <!-- 2. MOBILE INPUT BAR -->
       <div class="block md:hidden p-2 pb-[max(0.65rem,env(safe-area-inset-bottom))] bg-app-sidebar/98 border-t border-app-border shrink-0 z-30 shadow-2xl">
@@ -281,14 +306,14 @@
       <div class="p-4 border-b border-app-border flex items-center justify-between">
         <div class="flex items-center space-x-2">
           <i data-lucide="shield-check" class="w-4 h-4 text-app-cyan"></i>
-          <h3 class="text-xs font-mono font-bold uppercase tracking-wider text-white">Encrypted Vault (SQLite)</h3>
+          <h3 class="text-xs font-mono font-bold uppercase tracking-wider text-white">Encrypted Vault</h3>
         </div>
         <button id="btn-close-vault" class="p-1 rounded-lg text-app-muted hover:text-white hover:bg-app-card cursor-pointer">
           <i data-lucide="x" class="w-5 h-5"></i>
         </button>
       </div>
       <div class="p-3 bg-app-card/60 border-b border-app-border text-[11px] text-app-muted font-mono">
-        🔒 Client-side AES-256-GCM encrypted notes & files (&le;10MB). Accessible anytime even when peers are offline.
+        🔒 Client-side AES-256-GCM · Notes stored in SQLite · Files up to 50 MB staged on server disk.
       </div>
       <input type="file" id="input-vault-file" class="hidden" />
       <div class="flex-1 overflow-y-auto p-4 space-y-3">
@@ -297,7 +322,7 @@
             <i data-lucide="plus" class="w-3.5 h-3.5"></i>
             <span>Add Note</span>
           </button>
-          <button id="btn-add-vault-file" class="py-2 px-3 bg-app-card border border-app-border text-slate-200 hover:text-white text-xs rounded-lg hover:border-app-cyan transition-all flex items-center justify-center gap-1 cursor-pointer">
+          <button id="btn-add-vault-file" class="py-2 px-3 bg-app-card border border-app-border text-slate-200 hover:text-white text-xs rounded-lg hover:border-app-cyan transition-all flex items-center justify-center gap-1 cursor-pointer" title="Upload encrypted file (≤50 MB)">
             <i data-lucide="paperclip" class="w-3.5 h-3.5 text-app-cyan"></i>
             <span>Add File</span>
           </button>
@@ -310,7 +335,15 @@
             <button id="btn-cancel-vault-note" class="flex-1 py-1.5 bg-app-sidebar border border-app-border text-app-muted hover:text-white text-xs rounded-lg cursor-pointer">Cancel</button>
           </div>
         </div>
+        <!-- Existing vault_items (notes + legacy small files) -->
         <div id="vault-items-container" class="space-y-2"></div>
+        <!-- Staged files section (vault_files, disk-backed ≤50MB) -->
+        <div id="staged-files-section" class="hidden space-y-2 pt-2">
+          <p class="text-[10px] font-mono uppercase tracking-wider px-1 flex items-center gap-1" style="color:#FF9F1C;">
+            <span>💾</span> <span id="staged-files-heading">Staged Files (0)</span>
+          </p>
+          <div id="staged-files-container" class="space-y-2"></div>
+        </div>
       </div>
     </aside>
   </div>
@@ -458,6 +491,28 @@
           <button type="submit" id="btn-submit-unlock" class="flex-2 py-3 bg-app-cyan hover:bg-app-cyanHover text-black text-xs font-bold rounded-xl transition-all cursor-pointer shadow-md">Unlock & Join</button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- ================= DELETE ROOM CONFIRMATION MODAL ================= -->
+  <div id="delete-room-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden">
+    <div class="bg-app-sidebar border border-red-500/30 rounded-2xl max-w-sm w-full p-6 shadow-2xl animate-fade-in">
+      <div class="flex items-center gap-3 mb-4">
+        <div class="w-10 h-10 rounded-xl bg-red-500/10 border border-red-500/30 flex items-center justify-center text-red-400 shrink-0">
+          <i data-lucide="trash-2" class="w-5 h-5"></i>
+        </div>
+        <div>
+          <h3 class="text-sm font-bold text-white">Delete Room?</h3>
+          <p class="text-[11px] text-app-muted font-mono mt-0.5">This cannot be undone.</p>
+        </div>
+      </div>
+      <p class="text-xs text-slate-300 mb-5 leading-relaxed">
+        This will permanently delete the room, all encrypted notes, and all staged files from the server disk. All connected peers will be disconnected.
+      </p>
+      <div class="flex gap-3">
+        <button id="btn-delete-room-cancel" class="flex-1 py-2.5 bg-app-card border border-app-border text-app-muted hover:text-white text-xs font-semibold rounded-xl transition-all cursor-pointer">Cancel</button>
+        <button id="btn-delete-room-confirm" class="flex-1 py-2.5 bg-red-500 hover:bg-red-400 text-white text-xs font-bold rounded-xl transition-all cursor-pointer">Delete Room</button>
+      </div>
     </div>
   </div>
 

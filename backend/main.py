@@ -7,7 +7,7 @@ from fastapi.responses import FileResponse
 
 from database import init_db, close_db
 from config import settings
-from routes import rooms, vault
+from routes import rooms, vault, vault_files
 from signaling import signaling_endpoint
 
 @asynccontextmanager
@@ -30,6 +30,7 @@ app.add_middleware(
 
 app.include_router(rooms.router)
 app.include_router(vault.router)
+app.include_router(vault_files.router)
 
 @app.websocket("/ws/{room_id}")
 async def websocket_endpoint(websocket: WebSocket, room_id: str, peer_id: str, device_name: str, device_type: str):
