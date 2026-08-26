@@ -1479,13 +1479,6 @@ async function fetchStagedFiles() {
   }
 }
 
-function formatBytes(bytes) {
-  if (!bytes) return '0 B';
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-}
-
 function renderStagedFiles() {
   const section = document.getElementById('staged-files-section');
   const container = document.getElementById('staged-files-container');
