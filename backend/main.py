@@ -38,6 +38,9 @@ async def websocket_endpoint(websocket: WebSocket, room_id: str, peer_id: str, d
     await signaling_endpoint(websocket, room_id, peer_id, device_name, device_type)
 
 @app.get("/api/health")
+@app.head("/api/health")
+@app.get("/api/healthcheck")
+@app.head("/api/healthcheck")
 async def health_check():
     return {"status": "ok"}
 

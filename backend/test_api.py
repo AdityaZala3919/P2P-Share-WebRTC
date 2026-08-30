@@ -4,10 +4,17 @@ from main import app
 
 async def test_api():
     async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test") as client:
-        # 1. Health check
+        # 1. Health check (GET and HEAD for /api/health and /api/healthcheck)
         res = await client.get("/api/health")
-        assert res.status_code == 200, f"Health check failed: {res.text}"
-        print("1. Health check: OK")
+        assert res.status_code == 200, f"Health check GET failed: {res.text}"
+        res_head = await client.head("/api/health")
+        assert res_head.status_code == 200, f"Health check HEAD failed: {res_head.status_code}"
+
+        res_check = await client.get("/api/healthcheck")
+        assert res_check.status_code == 200, f"Healthcheck GET failed: {res_check.text}"
+        res_check_head = await client.head("/api/healthcheck")
+        assert res_check_head.status_code == 200, f"Healthcheck HEAD failed: {res_check_head.status_code}"
+        print("1. Health check (GET & HEAD /api/health, /api/healthcheck): OK")
 
         # 2. Create room (test both without and with trailing slash)
         res = await client.post("/api/rooms", json={"passphrase": "super-secret-key-123"})
