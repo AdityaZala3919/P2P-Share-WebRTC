@@ -68,7 +68,40 @@ async def test_api():
         assert "html" in res.headers.get("content-type", "").lower()
         print("10. SPA static fallback for /room/{room_id}: OK")
 
-        print("\nALL 10 API & INTEGRATION CHECKS PASSED SUCCESSFULLY!")
+        # 11. Test upload staged file
+        files = {"file": ("test.enc", b"encrypted_sample_data_12345", "application/octet-stream")}
+        form_data = {
+            "iv": "abcdef123456abcdef123456",
+            "salt": "0102030405060708090a0b0c0d0e0f10",
+            "original_file_name": "sample_document.pdf",
+            "original_file_size": "27"
+        }
+        res = await client.post(f"/api/rooms/{room_id}/files", files=files, data=form_data)
+        assert res.status_code == 200, f"Upload failed: {res.text}"
+        uploaded_meta = res.json()
+        print(f"11. Staged file uploaded: {uploaded_meta['file_name']} (id: {uploaded_meta['id']})")
+
+        # 12. Test GET /api/uploads
+        res = await client.get("/api/uploads")
+        assert res.status_code == 200
+        data = res.json()
+        assert data["total_files"] >= 1
+        print(f"12. GET /api/uploads: {data['total_files']} files, total size: {data['total_size_bytes']} bytes: OK")
+
+        # 13. Test DELETE /api/uploads
+        res = await client.delete("/api/uploads")
+        assert res.status_code == 200
+        del_data = res.json()
+        assert del_data["status"] == "ok"
+        print(f"13. DELETE /api/uploads: {del_data['deleted_count']} files deleted: OK")
+
+        # 14. Verify uploads list is empty
+        res = await client.get("/api/uploads")
+        assert res.status_code == 200
+        assert res.json()["total_files"] == 0
+        print("14. Verified uploads list is now empty: OK")
+
+        print("\nALL 14 API & INTEGRATION CHECKS PASSED SUCCESSFULLY!")
 
 if __name__ == "__main__":
     asyncio.run(test_api())

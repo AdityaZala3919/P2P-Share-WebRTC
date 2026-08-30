@@ -31,6 +31,7 @@ app.add_middleware(
 app.include_router(rooms.router)
 app.include_router(vault.router)
 app.include_router(vault_files.router)
+app.include_router(vault_files.uploads_router)
 
 @app.websocket("/ws/{room_id}")
 async def websocket_endpoint(websocket: WebSocket, room_id: str, peer_id: str, device_name: str, device_type: str):
